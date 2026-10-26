@@ -890,7 +890,7 @@
         fCtx.save();
         fCtx.filter = 'blur(12px) brightness(1.06)';
         fCtx.drawImage(this.sharpBuffer, 0, 0);
-        f_restore = fCtx.restore();
+        fCtx.restore();
 
         fCtx.fillStyle = 'rgba(214, 226, 232, 0.42)';
         fCtx.fillRect(0, 0, w, h);
