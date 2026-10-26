@@ -15,446 +15,77 @@
       --frost-white: #F4F8F9;
       --meadow-teal: #7FC8C2;
       --lamp-amber: #F2B544;
-      --picnic-berry: #E63946;
       --font-hand: 'Caveat', 'Comic Sans MS', cursive;
       --font-ui: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: var(--slate-glass);
-      color: var(--frost-white);
-      font-family: var(--font-ui);
-      user-select: none;
-      -webkit-user-select: none;
+      width: 100%; height: 100%; overflow: hidden; background-color: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); user-select: none; -webkit-user-select: none;
     }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      border: 0;
-    }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .hidden { display: none !important; }
 
-    .hidden {
-      display: none !important;
-    }
+    .app-shell { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+    .stage-container { position: absolute; inset: 0; overflow: hidden; z-index: 1; touch-action: none; }
+    .stage-canvas, .ui-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+    .ui-canvas { pointer-events: none; z-index: 2; }
 
-    .app-shell {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+    .top-bar, .bottom-toolbar {
+      position: relative; z-index: 10; background: var(--slate-glass-alpha); backdrop-filter: blur(8px); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid rgba(244, 248, 249, 0.12);
     }
+    .bottom-toolbar { border-bottom: none; border-top: 2px solid rgba(244, 248, 249, 0.12); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
 
-    .stage-container {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      z-index: 1;
-      touch-action: none;
-    }
-
-    .stage-canvas,
-    .ui-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .ui-canvas {
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .top-bar,
-    .bottom-toolbar {
-      position: relative;
-      z-index: 10;
-      background: var(--slate-glass-alpha);
-      backdrop-filter: blur(8px);
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      border-bottom: 2px solid rgba(244, 248, 249, 0.12);
-    }
-
-    .bottom-toolbar {
-      border-bottom: none;
-      border-top: 2px solid rgba(244, 248, 249, 0.12);
-      padding-bottom: max(8px, env(safe-area-inset-bottom));
-    }
-
-    .brand-cluster,
-    .scene-selector,
-    .top-utilities,
-    .tool-group,
-    .tool-settings,
-    .capture-cluster {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .brand-cluster, .scene-selector, .top-utilities, .tool-group, .capture-cluster { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
     .btn {
-      min-height: 44px;
-      min-width: 44px;
-      padding: 0 14px;
-      border-radius: 10px;
-      border: 1.5px solid rgba(244, 248, 249, 0.25);
-      background: rgba(31, 48, 56, 0.9);
-      color: var(--frost-white);
-      font-family: var(--font-ui);
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: background 0.15s ease, border-color 0.15s ease;
-      text-decoration: none;
+      min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.25); background: rgba(31, 48, 56, 0.9); color: var(--frost-white); font-family: var(--font-ui); font-size: 0.92rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease, border-color 0.15s ease; text-decoration: none;
     }
+    .btn:hover:not(:disabled) { border-color: var(--meadow-teal); background: rgba(127, 200, 194, 0.18); }
+    .btn:focus-visible, .scene-select:focus-visible { outline: 3px solid var(--lamp-amber); outline-offset: 2px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-compact { min-height: 40px; padding: 0 10px; font-size: 0.85rem; }
+    .btn-primary, .tool-btn.active { background: var(--meadow-teal); color: var(--slate-glass); border-color: var(--frost-white); }
+    .btn-secondary { background: rgba(214, 226, 232, 0.16); }
+    .btn-amber { background: var(--lamp-amber); color: var(--slate-glass); border-color: #fff; font-weight: 700; }
+    .btn-capture { padding: 0 22px; font-size: 1rem; }
 
-    .btn:hover:not(:disabled) {
-      border-color: var(--meadow-teal);
-      background: rgba(127, 200, 194, 0.18);
-    }
+    .scene-select { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.3); background: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); font-weight: 600; }
 
-    .btn:focus-visible,
-    .scene-select:focus-visible,
-    .swatch:focus-visible {
-      outline: 3px solid var(--lamp-amber);
-      outline-offset: 2px;
-    }
+    .status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,0.35); font-size: 0.85rem; font-weight: 600; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lamp-amber); }
+    .status-dot.ready { background: var(--meadow-teal); }
+    .status-dot.error { background: #E63946; }
 
-    .btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
+    .intro-overlay { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(31, 48, 56, 0.45); }
+    .picnic-card { max-width: 520px; width: 100%; background: var(--slate-glass-alpha); backdrop-filter: blur(12px); border: 2px solid rgba(244, 248, 249, 0.3); border-radius: 18px; padding: 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.45); }
+    .picnic-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(242, 181, 68, 0.2); color: var(--lamp-amber); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; }
+    .caveat-title { font-family: var(--font-hand); font-size: 2.8rem; color: var(--frost-white); line-height: 1.1; margin-bottom: 10px; }
+    .intro-lead { font-size: 0.98rem; line-height: 1.5; color: var(--fog-color); margin-bottom: 14px; }
+    .intro-steps { list-style: none; display: grid; gap: 8px; margin-bottom: 14px; font-size: 0.92rem; }
+    .intro-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 
-    .btn-compact {
-      min-height: 40px;
-      padding: 0 10px;
-      font-size: 0.85rem;
-    }
+    .countdown-overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(31, 48, 56, 0.25); }
+    .countdown-number { font-family: var(--font-hand); font-size: 7rem; font-weight: 700; color: var(--lamp-amber); text-shadow: 0 4px 20px rgba(0,0,0,0.65); }
 
-    .btn-primary,
-    .tool-btn.active {
-      background: var(--meadow-teal);
-      color: var(--slate-glass);
-      border-color: var(--frost-white);
-    }
+    .toast-banner { position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 15; background: var(--slate-glass-alpha); border: 1.5px solid var(--meadow-teal); color: var(--frost-white); padding: 8px 18px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; pointer-events: none; text-align: center; }
 
-    .btn-secondary {
-      background: rgba(214, 226, 232, 0.16);
-    }
-
-    .btn-amber {
-      background: var(--lamp-amber);
-      color: var(--slate-glass);
-      border-color: #fff;
-      font-weight: 700;
-    }
-
-    .btn-capture {
-      padding: 0 22px;
-      font-size: 1rem;
-    }
-
-    .scene-select {
-      min-height: 44px;
-      padding: 0 12px;
-      border-radius: 10px;
-      border: 1.5px solid rgba(244, 248, 249, 0.3);
-      background: var(--slate-glass);
-      color: var(--frost-white);
-      font-family: var(--font-ui);
-      font-weight: 600;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.35);
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--lamp-amber);
-    }
-
-    .status-dot.ready {
-      background: var(--meadow-teal);
-    }
-
-    .status-dot.error {
-      background: var(--picnic-berry);
-    }
-
-    .color-swatches {
-      display: flex;
-      gap: 6px;
-    }
-
-    .swatch {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.5);
-      cursor: pointer;
-    }
-
-    .swatch.active {
-      border: 3px solid var(--lamp-amber);
-      transform: scale(1.1);
-    }
-
-    .intro-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 25;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(31, 48, 56, 0.45);
-    }
-
-    .picnic-card {
-      max-width: 520px;
-      width: 100%;
-      background: var(--slate-glass-alpha);
-      backdrop-filter: blur(12px);
-      border: 2px solid rgba(244, 248, 249, 0.3);
-      border-radius: 18px;
-      padding: 26px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-    }
-
-    .picnic-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: rgba(242, 181, 68, 0.2);
-      color: var(--lamp-amber);
-      font-weight: 700;
-      font-size: 0.82rem;
-      margin-bottom: 8px;
-    }
-
-    .caveat-title {
-      font-family: var(--font-hand);
-      font-size: 2.8rem;
-      color: var(--frost-white);
-      line-height: 1.1;
-      margin-bottom: 10px;
-    }
-
-    .intro-lead {
-      font-size: 0.98rem;
-      line-height: 1.5;
-      color: var(--fog-color);
-      margin-bottom: 14px;
-    }
-
-    .intro-steps {
-      list-style: none;
-      display: grid;
-      gap: 8px;
-      margin-bottom: 14px;
-      font-size: 0.92rem;
-    }
-
-    .privacy-note {
-      font-size: 0.8rem;
-      color: var(--fog-color);
-      opacity: 0.85;
-      margin-bottom: 16px;
-    }
-
-    .intro-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .checkbox-label {
-      font-size: 0.88rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-    }
-
-    .progress-bar-track {
-      width: 100%;
-      height: 12px;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 999px;
-      overflow: hidden;
-      margin: 16px 0;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--lamp-amber);
-      transition: width 0.1s linear;
-    }
-
-    .countdown-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 20;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      background: rgba(31, 48, 56, 0.25);
-    }
-
-    .countdown-number {
-      font-family: var(--font-hand);
-      font-size: 7rem;
-      font-weight: 700;
-      color: var(--lamp-amber);
-      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
-    }
-
-    .toast-banner {
-      position: absolute;
-      top: 72px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 15;
-      background: var(--slate-glass-alpha);
-      border: 1.5px solid var(--meadow-teal);
-      color: var(--frost-white);
-      padding: 8px 18px;
-      border-radius: 999px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      pointer-events: none;
-      text-align: center;
-    }
-
-    .photo-tray {
-      position: absolute;
-      top: 66px;
-      right: 12px;
-      bottom: 74px;
-      width: 250px;
-      z-index: 12;
-      background: var(--slate-glass-alpha);
-      backdrop-filter: blur(10px);
-      border: 1.5px solid rgba(244, 248, 249, 0.2);
-      border-radius: 14px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      overflow-y: auto;
-    }
-
-    .tray-title {
-      font-family: var(--font-hand);
-      font-size: 1.6rem;
-    }
-
-    .tray-subtitle {
-      font-size: 0.75rem;
-      color: var(--fog-color);
-    }
-
-    .tray-warning {
-      background: rgba(242, 181, 68, 0.2);
-      border: 1px solid var(--lamp-amber);
-      color: var(--lamp-amber);
-      font-size: 0.78rem;
-      padding: 6px 8px;
-      border-radius: 8px;
-    }
-
-    .photo-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .photo-card {
-      background: var(--frost-white);
-      color: var(--slate-glass);
-      padding: 8px;
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .photo-card img {
-      width: 100%;
-      border-radius: 6px;
-      display: block;
-    }
-
-    .photo-card-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .photo-card-actions .btn {
-      flex: 1;
-      min-height: 36px;
-      font-size: 0.8rem;
-    }
+    .photo-tray { position: absolute; top: 66px; right: 12px; bottom: 74px; width: 250px; z-index: 12; background: var(--slate-glass-alpha); backdrop-filter: blur(10px); border: 1.5px solid rgba(244, 248, 249, 0.2); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .tray-title { font-family: var(--font-hand); font-size: 1.6rem; }
+    .tray-subtitle { font-size: 0.75rem; color: var(--fog-color); }
+    .tray-warning { background: rgba(242, 181, 68, 0.2); border: 1px solid var(--lamp-amber); color: var(--lamp-amber); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px; }
+    .photo-list { display: flex; flex-direction: column; gap: 12px; }
+    .photo-card { background: var(--frost-white); color: var(--slate-glass); padding: 8px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .photo-card img { width: 100%; border-radius: 6px; display: block; }
+    .photo-card-actions { display: flex; gap: 6px; }
+    .photo-card-actions .btn { flex: 1; min-height: 36px; font-size: 0.8rem; }
 
     @media (max-width: 768px) {
-      .photo-tray {
-        top: auto;
-        left: 12px;
-        right: 12px;
-        bottom: 84px;
-        width: auto;
-        height: 190px;
-      }
-      .photo-list {
-        flex-direction: row;
-        overflow-x: auto;
-      }
-      .photo-card {
-        min-width: 150px;
-      }
+      .photo-tray { top: auto; left: 12px; right: 12px; bottom: 84px; width: auto; height: 190px; }
+      .photo-list { flex-direction: row; overflow-x: auto; }
+      .photo-card { min-width: 150px; }
     }
   </style>
 </head>
@@ -483,35 +114,13 @@
             <strong>Camera frames are processed on this device</strong> and never uploaded.
           </p>
           <ul class="intro-steps">
-            <li><strong>😮 Make an "O" mouth pose</strong> (or press <kbd>F</kbd>) to breathe fog onto the glass.</li>
-            <li><strong>☝️ Point your index finger</strong> (or drag with mouse/touch) to write, wipe, or stamp berry lipstick.</li>
-            <li><strong>📸 Press Photo</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake.</li>
+            <li><strong>😮 Make an "O" mouth pose</strong> to breathe fog onto the glass[cite: 1, 2].</li>
+            <li><strong>☝️ Point index finger</strong> to write; <strong>✊ Make a fist</strong> to wipe clean[cite: 2, 3].</li>
+            <li><strong>📸 Press Photo</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake[cite: 2].</li>
           </ul>
-          <p class="privacy-note">
-            Note: Downloading AI landmark models requires initial network access; webcam video stays strictly in local memory.
-          </p>
           <div class="intro-actions">
             <button id="btn-start-camera" type="button" class="btn btn-primary">Start Camera</button>
             <button id="btn-try-demo" type="button" class="btn btn-secondary">Try Picnic Demo (No Camera)</button>
-          </div>
-          <div class="calibration-row">
-            <label class="checkbox-label">
-              <input type="checkbox" id="chk-calibrate-mouth" />
-              Run 3-second "O" mouth calibration after camera starts
-            </label>
-          </div>
-        </div>
-      </section>
-
-      <section id="calibration-overlay" class="intro-overlay hidden" aria-labelledby="calib-title">
-        <div class="intro-card picnic-card">
-          <h2 id="calib-title" class="caveat-title">Mouth Fog Calibration</h2>
-          <p id="calib-instruction">Make a comfortable rounded "O" shape with your mouth and hold for 2 seconds...</p>
-          <div class="progress-bar-track">
-            <div id="calib-progress" class="progress-bar-fill"></div>
-          </div>
-          <div class="intro-actions">
-            <button id="btn-skip-calib" type="button" class="btn btn-secondary">Use Default Tuning</button>
           </div>
         </div>
       </section>
@@ -531,7 +140,6 @@
         <select id="select-scene" class="scene-select">
           <option value="meadow">🌻 Sunny Picnic Meadow</option>
           <option value="aquarium">🦋 Butterfly &amp; Koi Pond</option>
-          <option value="rain">🌦️ Sunshower Dew</option>
           <option value="fireflies">✨ Twilight Fireflies</option>
         </select>
         <button id="btn-pause-scene" type="button" class="btn btn-compact" aria-pressed="false" title="Pause decorative scene animation">
@@ -540,10 +148,6 @@
       </div>
 
       <div class="top-utilities">
-        <button id="btn-undo" type="button" class="btn btn-compact" disabled title="Undo last clear or stroke">Undo</button>
-        <button id="btn-clear-glass" type="button" class="btn btn-compact" title="Clear condensation only (C)">Clear Glass (C)</button>
-        <button id="btn-clear-marks" type="button" class="btn btn-compact" title="Remove lipstick and stamps">Clear Marks</button>
-        <button id="btn-reset-scene" type="button" class="btn btn-compact" title="Clear all fog and marks">Reset Scene</button>
         <button id="btn-toggle-tray" type="button" class="btn btn-compact" aria-expanded="true">
           Photos (<span id="photo-count">0</span>/8)
         </button>
@@ -570,35 +174,14 @@
           ☝️ Write
         </button>
         <button type="button" class="btn tool-btn" data-tool="wipe" role="radio" aria-checked="false">
-          🧽 Wipe
-        </button>
-        <button type="button" class="btn tool-btn" data-tool="lipstick" role="radio" aria-checked="false">
-          🍓 Jam Lipstick
+          ✊ Fist Wipe
         </button>
         <button type="button" class="btn tool-btn" data-tool="play" role="radio" aria-checked="false">
           🦋 Play
         </button>
       </div>
 
-      <div id="lipstick-settings" class="tool-settings hidden" aria-label="Lipstick shade and stamp options">
-        <div class="color-swatches" role="radiogroup" aria-label="Berry shade">
-          <button type="button" class="swatch active" data-color="#E63946" style="background:#E63946" aria-label="Strawberry Jam"></button>
-          <button type="button" class="swatch" data-color="#9B2226" style="background:#9B2226" aria-label="Cherry Tart"></button>
-          <button type="button" class="swatch" data-color="#F4A261" style="background:#F4A261" aria-label="Honey Peach"></button>
-          <button type="button" class="swatch" data-color="#7209B7" style="background:#7209B7" aria-label="Wild Berry"></button>
-        </div>
-        <select id="select-stamp-mode" class="scene-select compact-select" aria-label="Lipstick mode">
-          <option value="draw">🖍️ Waxy Stroke</option>
-          <option value="kiss">💋 Kiss Stamp</option>
-          <option value="berry">🍓 Berry Stamp</option>
-          <option value="daisy">🌼 Daisy Stamp</option>
-        </select>
-      </div>
-
       <div class="capture-cluster">
-        <button id="btn-fog-pulse" type="button" class="btn btn-secondary" title="Add bounded fog pulse (Hold F)">
-          💨 Breathe Fog (F)
-        </button>
         <button id="btn-photo" type="button" class="btn btn-amber btn-capture" title="Start 3-second photo countdown (Space)">
           📸 Photo
         </button>
@@ -607,13 +190,8 @@
   </div>
 
   <script type="module">
-    /* =========================================================================
-       1. COORDINATES & SMOOTHING
-       ========================================================================= */
     function computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight) {
-      if (!videoWidth || !videoHeight || !stageWidth || !stageHeight) {
-        return { scale: 1, offsetX: 0, offsetY: 0 };
-      }
+      if (!videoWidth || !videoHeight || !stageWidth || !stageHeight) return { scale: 1, offsetX: 0, offsetY: 0 };
       const videoAspect = videoWidth / videoHeight;
       const stageAspect = stageWidth / stageHeight;
       let scale, offsetX = 0, offsetY = 0;
@@ -630,28 +208,19 @@
     function mapNormalizedToStage(normX, normY, videoWidth, videoHeight, stageWidth, stageHeight, mirror = true) {
       const { scale, offsetX, offsetY } = computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight);
       const effectiveNormX = mirror ? (1 - normX) : normX;
-      const x = effectiveNormX * videoWidth * scale + offsetX;
-      const y = normY * videoHeight * scale + offsetY;
       return {
-        x: Math.max(0, Math.min(stageWidth, x)),
-        y: Math.max(0, Math.min(stageHeight, y))
+        x: Math.max(0, Math.min(stageWidth, effectiveNormX * videoWidth * scale + offsetX)),
+        y: Math.max(0, Math.min(stageHeight, normY * videoHeight * scale + offsetY))
       };
     }
 
     class PointSmoother {
       constructor(alpha = 0.45, maxGapMs = 250) {
-        this.alpha = alpha;
-        this.maxGapMs = maxGapMs;
-        this.reset();
+        this.alpha = alpha; this.maxGapMs = maxGapMs; this.reset();
       }
       update(x, y, timestampMs) {
-        if (
-          this.lastX === null ||
-          timestampMs - this.lastTimestamp > this.maxGapMs ||
-          Math.hypot(x - this.lastX, y - this.lastY) > 260
-        ) {
-          this.lastX = x;
-          this.lastY = y;
+        if (this.lastX === null || timestampMs - this.lastTimestamp > this.maxGapMs || Math.hypot(x - this.lastX, y - this.lastY) > 260) {
+          this.lastX = x; this.lastY = y;
         } else {
           this.lastX += this.alpha * (x - this.lastX);
           this.lastY += this.alpha * (y - this.lastY);
@@ -659,34 +228,11 @@
         this.lastTimestamp = timestampMs;
         return { x: this.lastX, y: this.lastY };
       }
-      reset() {
-        this.lastX = null;
-        this.lastY = null;
-        this.lastTimestamp = 0;
-      }
+      reset() { this.lastX = null; this.lastY = null; this.lastTimestamp = 0; }
     }
 
-    /* =========================================================================
-       2. MOUTH & HAND CLASSIFIERS + CONFLICT ARBITRATOR
-       ========================================================================= */
-    const DEFAULT_MOUTH_CONFIG = {
-      dwellMs: 400,
-      maxActiveMs: 2500,
-      rearmNeutralMs: 300,
-      postDrawingCooldownMs: 300,
-      activateScore: 0.52,
-      releaseScore: 0.36
-    };
-
-    const DEFAULT_HAND_CONFIG = {
-      dwellMs: 90,
-      releaseMs: 70
-    };
-
-    function evaluateMouthPose(faceLandmarks, blendshapes = null, calibratedBaseline = 1.0) {
-      if (!faceLandmarks || faceLandmarks.length < 300) {
-        return { score: 0, mouthCenter: null };
-      }
+    function evaluateMouthPose(faceLandmarks, blendshapes = null) {
+      if (!faceLandmarks || faceLandmarks.length < 300) return { score: 0, mouthCenter: null };
       const upperLip = faceLandmarks[13];
       const lowerLip = faceLandmarks[14];
       const leftCorner = faceLandmarks[78];
@@ -697,9 +243,7 @@
       if (mouthWidth < 1e-4) return { score: 0, mouthCenter: null };
 
       const aspect = mouthHeight / mouthWidth;
-      const geometryScore = aspect >= 0.26 && aspect <= 0.95
-        ? Math.min(1, (aspect - 0.22) / (0.48 * calibratedBaseline))
-        : 0;
+      const geometryScore = aspect >= 0.26 && aspect <= 0.95 ? Math.min(1, (aspect - 0.22) / 0.48) : 0;
 
       let blendScore = geometryScore;
       if (blendshapes && Array.isArray(blendshapes)) {
@@ -714,17 +258,12 @@
 
       return {
         score: blendScore,
-        mouthCenter: {
-          x: (upperLip.x + lowerLip.x) * 0.5,
-          y: (upperLip.y + lowerLip.y) * 0.5
-        }
+        mouthCenter: { x: (upperLip.x + lowerLip.x) * 0.5, y: (upperLip.y + lowerLip.y) * 0.5 }
       };
     }
 
     function evaluateHandPose(handLandmarks) {
-      if (!handLandmarks || handLandmarks.length < 21) {
-        return { pose: 'none', indexTip: null, handScale: 0.1 };
-      }
+      if (!handLandmarks || handLandmarks.length < 21) return { pose: 'none', indexTip: null, fistCenter: null, handScale: 0.1 };
       const wrist = handLandmarks[0];
       const middleMcp = handLandmarks[9];
       const handScale = Math.max(0.04, Math.hypot(middleMcp.x - wrist.x, middleMcp.y - wrist.y));
@@ -745,116 +284,11 @@
       return {
         pose,
         indexTip: { x: handLandmarks[8].x, y: handLandmarks[8].y },
-        palmCenter: { x: middleMcp.x, y: middleMcp.y },
+        fistCenter: { x: middleMcp.x, y: middleMcp.y },
         handScale
       };
     }
 
-    class InteractionArbitrator {
-      constructor(mouthConfig = DEFAULT_MOUTH_CONFIG, handConfig = DEFAULT_HAND_CONFIG) {
-        this.mouthCfg = { ...DEFAULT_MOUTH_CONFIG, ...mouthConfig };
-        this.handCfg = { ...DEFAULT_HAND_CONFIG, ...handConfig };
-        this.reset();
-      }
-      reset() {
-        this.mouthCandidateStart = null;
-        this.mouthActiveStart = null;
-        this.mouthNeutralStart = 0;
-        this.mouthArmed = true;
-        this.mouthActive = false;
-        this.lastDrawingEndTime = -9999;
-        this.handPointStart = null;
-        this.handReleaseStart = null;
-        this.handApplying = false;
-        this.pointerApplying = false;
-      }
-      setPointerActive(isActive, nowMs) {
-        if (this.pointerApplying && !isActive) this.lastDrawingEndTime = nowMs;
-        this.pointerApplying = isActive;
-        if (isActive) {
-          this.stopMouth(nowMs, false);
-          this.handApplying = false;
-        }
-      }
-      stopMouth(nowMs, isNeutral = false) {
-        this.mouthActive = false;
-        this.mouthCandidateStart = null;
-        this.mouthActiveStart = null;
-        if (!isNeutral) {
-          this.mouthArmed = false;
-          this.mouthNeutralStart = null;
-        }
-      }
-      update({ mouthScore, handPose, nowMs }) {
-        if (this.pointerApplying) {
-          this.handApplying = false;
-          this.handPointStart = null;
-        } else if (handPose === 'point') {
-          this.handReleaseStart = null;
-          if (!this.handApplying) {
-            if (this.handPointStart === null) this.handPointStart = nowMs;
-            if (nowMs - this.handPointStart >= this.handCfg.dwellMs) this.handApplying = true;
-          }
-        } else {
-          this.handPointStart = null;
-          if (this.handApplying) {
-            if (this.handReleaseStart === null) this.handReleaseStart = nowMs;
-            if (nowMs - this.handReleaseStart >= this.handCfg.releaseMs || handPose === 'none' || handPose === 'fist') {
-              this.handApplying = false;
-              this.lastDrawingEndTime = nowMs;
-            }
-          }
-        }
-
-        const isDrawingActive = this.pointerApplying || this.handApplying;
-        if (isDrawingActive) this.lastDrawingEndTime = nowMs;
-
-        const inDrawingCooldown = isDrawingActive || (nowMs - this.lastDrawingEndTime < this.mouthCfg.postDrawingCooldownMs);
-        if (inDrawingCooldown) {
-          this.stopMouth(nowMs, false);
-          return { mouthActive: false, mouthProgress: 0, handApplying: this.handApplying, isDrawingActive };
-        }
-
-        if (!this.mouthArmed) {
-          if (mouthScore < this.mouthCfg.releaseScore) {
-            if (this.mouthNeutralStart === null) this.mouthNeutralStart = nowMs;
-            if (nowMs - this.mouthNeutralStart >= this.mouthCfg.rearmNeutralMs) this.mouthArmed = true;
-          } else {
-            this.mouthNeutralStart = null;
-          }
-        }
-
-        let mouthProgress = 0;
-        if (this.mouthActive) {
-          if (mouthScore < this.mouthCfg.releaseScore) {
-            this.stopMouth(nowMs, true);
-            this.mouthArmed = false;
-            this.mouthNeutralStart = nowMs;
-          } else if (nowMs - this.mouthActiveStart >= this.mouthCfg.maxActiveMs) {
-            this.stopMouth(nowMs, false);
-          } else {
-            mouthProgress = 1;
-          }
-        } else if (this.mouthArmed && mouthScore >= this.mouthCfg.activateScore) {
-          if (this.mouthCandidateStart === null) this.mouthCandidateStart = nowMs;
-          const elapsed = nowMs - this.mouthCandidateStart;
-          mouthProgress = Math.min(1, elapsed / this.mouthCfg.dwellMs);
-          if (elapsed >= this.mouthCfg.dwellMs) {
-            this.mouthActive = true;
-            this.mouthActiveStart = nowMs;
-            mouthProgress = 1;
-          }
-        } else {
-          this.mouthCandidateStart = null;
-        }
-
-        return { mouthActive: this.mouthActive, mouthProgress, handApplying: this.handApplying, isDrawingActive };
-      }
-    }
-
-    /* =========================================================================
-       3. ON-DEVICE MEDIAPIPE VISION TRACKER
-       ========================================================================= */
     const MEDIAPIPE_VISION_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
     const MEDIAPIPE_WASM_ROOT = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
     const FACE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
@@ -867,8 +301,6 @@
         this.isReady = false;
         this.inFlight = false;
         this.lastVideoTime = -1;
-        this.lastPalm = null;
-        this.lastPalmTime = 0;
       }
       async init() {
         try {
@@ -876,51 +308,44 @@
           const { FilesetResolver, FaceLandmarker, HandLandmarker } = visionModule;
           const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_ROOT);
 
-          this.faceLandmarker = await this.createWithFallback(FaceLandmarker, vision, {
-            baseOptions: { modelAssetPath: FACE_MODEL_URL },
-            runningMode: 'VIDEO',
-            numFaces: 1,
-            outputFaceBlendshapes: true
+          this.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: FACE_MODEL_URL, delegate: 'GPU' },
+            runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true
           });
-          this.handLandmarker = await this.createWithFallback(HandLandmarker, vision, {
-            baseOptions: { modelAssetPath: HAND_MODEL_URL },
-            runningMode: 'VIDEO',
-            numHands: 1
+          this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: 'GPU' },
+            runningMode: 'VIDEO', numHands: 1
           });
-
-          this.isReady = Boolean(this.faceLandmarker || this.handLandmarker);
-          return { ready: this.isReady };
+          this.isReady = true;
+          return { ready: true };
         } catch (err) {
-          console.warn('MediaPipe unavailable; using pointer controls.', err);
-          this.isReady = false;
-          return { ready: false, error: err };
-        }
-      }
-      async createWithFallback(TaskClass, vision, options) {
-        try {
-          return await TaskClass.createFromOptions(vision, {
-            ...options,
-            baseOptions: { ...options.baseOptions, delegate: 'GPU' }
-          });
-        } catch {
           try {
-            return await TaskClass.createFromOptions(vision, {
-              ...options,
-              baseOptions: { ...options.baseOptions, delegate: 'CPU' }
+            const visionModule = await import(MEDIAPIPE_VISION_CDN);
+            const { FilesetResolver, FaceLandmarker, HandLandmarker } = visionModule;
+            const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_ROOT);
+            this.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+              baseOptions: { modelAssetPath: FACE_MODEL_URL, delegate: 'CPU' },
+              runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true
             });
-          } catch {
-            return null;
+            this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+              baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: 'CPU' },
+              runningMode: 'VIDEO', numHands: 1
+            });
+            this.isReady = true;
+            return { ready: true };
+          } catch (cpuErr) {
+            this.isReady = false;
+            return { ready: false, error: cpuErr };
           }
         }
       }
       detect(videoEl, timestampMs) {
         if (!this.isReady || this.inFlight || !videoEl || videoEl.readyState < 2) return null;
         if (videoEl.currentTime === this.lastVideoTime) return null;
-
         this.inFlight = true;
         this.lastVideoTime = videoEl.currentTime;
-        let faceLandmarks = null, blendshapes = null, handLandmarks = null, handReacquired = false;
 
+        let faceLandmarks = null, blendshapes = null, handLandmarks = null;
         try {
           if (this.faceLandmarker) {
             const fRes = this.faceLandmarker.detectForVideo(videoEl, timestampMs);
@@ -931,41 +356,23 @@
           }
           if (this.handLandmarker) {
             const hRes = this.handLandmarker.detectForVideo(videoEl, timestampMs);
-            if (hRes?.landmarks?.length > 0) {
-              const candidate = hRes.landmarks[0];
-              const palm = candidate[9];
-              handReacquired = !(
-                this.lastPalm &&
-                timestampMs - this.lastPalmTime < 400 &&
-                Math.hypot(palm.x - this.lastPalm.x, palm.y - this.lastPalm.y) < 0.28
-              );
-              this.lastPalm = { x: palm.x, y: palm.y };
-              this.lastPalmTime = timestampMs;
-              handLandmarks = candidate;
-            } else {
-              this.lastPalm = null;
-            }
+            if (hRes?.landmarks?.length > 0) handLandmarks = hRes.landmarks[0];
           }
         } catch (e) {
-          console.warn('Frame skipped:', e);
+          console.warn('Detection skipped:', e);
         } finally {
           this.inFlight = false;
         }
-        return { faceLandmarks, blendshapes, handLandmarks, handReacquired };
+        return { faceLandmarks, blendshapes, handLandmarks };
       }
     }
 
-    /* =========================================================================
-       4. FLOATING-POINT FOG ENGINE & SURFACE MARKS LAYER
-       ========================================================================= */
     class FogEngine {
       constructor(gridWidth = 320, gridHeight = 180) {
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         this.density = new Float32Array(gridWidth * gridHeight);
         this.noise = new Uint8Array(gridWidth * gridHeight);
-        this.drips = [];
-        this.maxDrips = 14;
         this.evaporationPerSec = 1 / 120;
 
         this.maskCanvas = document.createElement('canvas');
@@ -980,50 +387,36 @@
       fillInitialIntroFog() {
         this.density.fill(0.86);
         const temp = document.createElement('canvas');
-        temp.width = this.gridWidth;
-        temp.height = this.gridHeight;
+        temp.width = this.gridWidth; temp.height = this.gridHeight;
         const tctx = temp.getContext('2d');
         tctx.fillStyle = '#000';
         tctx.font = `bold ${Math.round(this.gridHeight * 0.22)}px Caveat, cursive`;
-        tctx.textAlign = 'center';
-        tctx.textBaseline = 'middle';
+        tctx.textAlign = 'center'; tctx.textBaseline = 'middle';
         tctx.fillText('Picnic Glass', this.gridWidth * 0.5, this.gridHeight * 0.25);
-
         const data = tctx.getImageData(0, 0, this.gridWidth, this.gridHeight).data;
         for (let i = 0; i < this.density.length; i++) {
           const alpha = data[i * 4 + 3] / 255;
-          if (alpha > 0.1) {
-            this.density[i] = Math.max(0.05, this.density[i] * (1 - alpha * 0.92));
-          }
+          if (alpha > 0.1) this.density[i] = Math.max(0.05, this.density[i] * (1 - alpha * 0.92));
         }
       }
-      cloneDensity() { return new Float32Array(this.density); }
-      restoreDensity(snap) { if (snap?.length === this.density.length) this.density.set(snap); }
-      clearAll() { this.density.fill(0); this.drips.length = 0; }
+      clearAll() { this.density.fill(0); }
       addBreath(normX, normY, dtSec, intensity = 1.15) {
-        const cx = normX * this.gridWidth;
-        const cy = normY * this.gridHeight;
+        const cx = normX * this.gridWidth, cy = normY * this.gridHeight;
         const radius = Math.max(this.gridWidth, this.gridHeight) * 0.22;
         const rSq = radius * radius;
         const ambientGain = 0.08 * dtSec * intensity;
 
         for (let y = 0; y < this.gridHeight; y++) {
-          const dy = y - cy;
-          const rowOffset = y * this.gridWidth;
+          const dy = y - cy, rowOffset = y * this.gridWidth;
           for (let x = 0; x < this.gridWidth; x++) {
-            const dx = x - cx;
-            const dSq = dx * dx + dy * dy;
+            const dx = x - cx, dSq = dx * dx + dy * dy;
             let add = ambientGain;
             if (dSq < rSq) {
               const falloff = 1 - Math.sqrt(dSq) / radius;
               add += falloff * falloff * 0.95 * dtSec * intensity;
             }
             const idx = rowOffset + x;
-            const nextVal = Math.min(1, this.density[idx] + add);
-            this.density[idx] = nextVal;
-            if (nextVal > 0.92 && this.drips.length < this.maxDrips && Math.random() < 0.0005) {
-              this.drips.push({ x, y, vy: 10 + Math.random() * 14, life: 2.5 });
-            }
+            this.density[idx] = Math.min(1, this.density[idx] + add);
           }
         }
       }
@@ -1034,11 +427,7 @@
         const dist = Math.hypot(x1 - x0, y1 - y0);
         const steps = Math.max(1, Math.ceil(dist / (r * 0.35)));
         for (let s = 0; s <= steps; s++) {
-          const t = s / steps;
-          this.stampClearCircle(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, r);
-        }
-        if (this.drips.length < this.maxDrips && Math.random() < 0.12) {
-          this.drips.push({ x: Math.round(x1), y: Math.round(y1), vy: 14, life: 1.8 });
+          this.stampClearCircle(x0 + (x1 - x0) * (s / steps), y0 + (y1 - y0) * (s / steps), r);
         }
       }
       stampClearCircle(cx, cy, r) {
@@ -1064,21 +453,12 @@
         for (let i = 0; i < this.density.length; i++) {
           if (this.density[i] > 0) this.density[i] = Math.max(0, this.density[i] - evap);
         }
-        for (let i = this.drips.length - 1; i >= 0; i--) {
-          const d = this.drips[i];
-          d.y += d.vy * clampedDt;
-          d.life -= clampedDt;
-          this.stampClearCircle(d.x, d.y, 1.8);
-          if (d.life <= 0 || d.y >= this.gridHeight) this.drips.splice(i, 1);
-        }
       }
       renderMaskCanvas() {
         const data = this.imageData.data;
         for (let i = 0; i < this.density.length; i++) {
           const d = this.density[i], n = this.noise[i], p = i * 4;
-          data[p] = n;
-          data[p + 1] = Math.min(255, n + 10);
-          data[p + 2] = Math.min(255, n + 16);
+          data[p] = n; data[p + 1] = Math.min(255, n + 10); data[p + 2] = Math.min(255, n + 16);
           data[p + 3] = Math.round(Math.min(1, d) * 232);
         }
         this.maskCtx.putImageData(this.imageData, 0, 0);
@@ -1086,109 +466,9 @@
       }
     }
 
-    class MarksLayer {
-      constructor(width = 1280, height = 720, maxUndo = 10) {
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.ctx = this.canvas.getContext('2d');
-        this.maxUndo = maxUndo;
-        this.undoStack = [];
-      }
-      resize(newWidth, newHeight) {
-        if (newWidth === this.canvas.width && newHeight === this.canvas.height) return;
-        const temp = document.createElement('canvas');
-        temp.width = this.canvas.width;
-        temp.height = this.canvas.height;
-        temp.getContext('2d').drawImage(this.canvas, 0, 0);
-        this.canvas.width = newWidth;
-        this.canvas.height = newHeight;
-        this.ctx.drawImage(temp, 0, 0, newWidth, newHeight);
-      }
-      pushUndo(fogSnapshot = null) {
-        const img = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        this.undoStack.push({ marksImage: img, fogSnapshot: fogSnapshot ? new Float32Array(fogSnapshot) : null });
-        if (this.undoStack.length > this.maxUndo) this.undoStack.shift();
-      }
-      canUndo() { return this.undoStack.length > 0; }
-      popUndo(fogEngine = null) {
-        if (!this.canUndo()) return false;
-        const state = this.undoStack.pop();
-        if (state.marksImage) this.ctx.putImageData(state.marksImage, 0, 0);
-        if (state.fogSnapshot && fogEngine) fogEngine.restoreDensity(state.fogSnapshot);
-        return true;
-      }
-      drawLipstickSegment(x0, y0, x1, y1, color = '#E63946', radius = 12) {
-        const ctx = this.ctx;
-        ctx.save();
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = radius * 1.8;
-        ctx.globalAlpha = 0.88;
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
-
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.lineWidth = radius * 0.45;
-        ctx.beginPath();
-        ctx.moveTo(x0 - 2, y0 - 2);
-        ctx.lineTo(x1 - 2, y1 - 2);
-        ctx.stroke();
-        ctx.restore();
-      }
-      placeStamp(x, y, stampType = 'kiss', color = '#E63946', size = 46) {
-        const ctx = this.ctx;
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate((Math.random() - 0.5) * 0.35);
-        if (stampType === 'kiss') {
-          ctx.fillStyle = color;
-          ctx.globalAlpha = 0.86;
-          ctx.beginPath();
-          ctx.arc(-size * 0.22, -size * 0.1, size * 0.26, Math.PI, 0, false);
-          ctx.arc(size * 0.22, -size * 0.1, size * 0.26, Math.PI, 0, false);
-          ctx.quadraticCurveTo(0, size * 0.06, -size * 0.48, -size * 0.1);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo(-size * 0.46, 0);
-          ctx.quadraticCurveTo(0, size * 0.55, size * 0.46, 0);
-          ctx.quadraticCurveTo(0, size * 0.12, -size * 0.46, 0);
-          ctx.fill();
-        } else {
-          const emoji = stampType === 'berry' ? '🍓' : '🌼';
-          ctx.font = `${Math.round(size * 1.2)}px sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(emoji, 0, 0);
-        }
-        ctx.restore();
-      }
-      wipeSegment(x0, y0, x1, y1, radius = 34) {
-        const ctx = this.ctx;
-        ctx.save();
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineCap = 'round';
-        ctx.lineWidth = radius * 2;
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
-        ctx.restore();
-      }
-      clearAll() { this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); }
-    }
-
-    /* =========================================================================
-       5. PICNIC SCENES & PHOTO EXPORT TRAY
-       ========================================================================= */
     class SceneManager {
       constructor(width = 1280, height = 720) {
-        this.width = width;
-        this.height = height;
+        this.width = width; this.height = height;
         this.currentScene = 'meadow';
         this.paused = false;
         this.initEntities();
@@ -1196,54 +476,31 @@
       resize(width, height) { this.width = width; this.height = height; }
       setScene(sceneId) { this.currentScene = sceneId; }
       initEntities() {
-        this.critters = Array.from({ length: 7 }, (_, i) => ({
-          x: Math.random() * this.width,
-          y: Math.random() * this.height,
-          vx: (Math.random() - 0.5) * 90,
-          vy: (Math.random() - 0.5) * 60,
-          angle: 0,
-          wingPhase: Math.random() * Math.PI * 2,
-          isButterfly: i % 2 === 0,
-          color: i % 2 === 0 ? '#F2B544' : '#E63946'
-        }));
-        this.raindrops = Array.from({ length: 32 }, () => ({
-          x: Math.random() * this.width,
-          y: Math.random() * this.height,
-          vy: 140 + Math.random() * 120,
-          r: 2.5 + Math.random() * 2.5
+        this.critters = Array.from({ length: 8 }, (_, i) => ({
+          x: Math.random() * this.width, y: Math.random() * this.height,
+          vx: (Math.random() - 0.5) * 65, vy: (Math.random() - 0.5) * 45,
+          angle: 0, swimPhase: Math.random() * Math.PI * 2,
+          isButterfly: i % 2 === 0, color: i % 2 === 0 ? '#F2B544' : '#E63946', sizeScale: 0.8 + Math.random() * 0.5
         }));
         this.fireflies = Array.from({ length: 22 }, () => ({
-          x: Math.random() * this.width,
-          y: Math.random() * this.height,
-          vx: (Math.random() - 0.5) * 45,
-          vy: (Math.random() - 0.5) * 45,
-          phase: Math.random() * Math.PI * 2
+          x: Math.random() * this.width, y: Math.random() * this.height, vx: (Math.random() - 0.5) * 45, vy: (Math.random() - 0.5) * 45, phase: Math.random() * Math.PI * 2
         }));
         this.seeds = Array.from({ length: 16 }, () => ({
-          x: Math.random() * this.width,
-          y: Math.random() * this.height,
-          vx: 18 + Math.random() * 20,
-          vy: -10 - Math.random() * 15
+          x: Math.random() * this.width, y: Math.random() * this.height, vx: 18 + Math.random() * 20, vy: -10 - Math.random() * 15
         }));
       }
       renderDemoBackground(ctx) {
         const w = this.width, h = this.height;
         const grad = ctx.createLinearGradient(0, 0, 0, h);
         if (this.currentScene === 'fireflies') {
-          grad.addColorStop(0, '#16262E');
-          grad.addColorStop(1, '#28433A');
+          grad.addColorStop(0, '#16262E'); grad.addColorStop(1, '#28433A');
         } else {
-          grad.addColorStop(0, '#88D4CD');
-          grad.addColorStop(0.65, '#CDEAC0');
-          grad.addColorStop(1, '#7FB069');
+          grad.addColorStop(0, '#88D4CD'); grad.addColorStop(0.65, '#CDEAC0'); grad.addColorStop(1, '#7FB069');
         }
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
 
         ctx.fillStyle = 'rgba(242, 181, 68, 0.22)';
-        ctx.beginPath();
-        ctx.arc(w * 0.82, h * 0.18, Math.min(w, h) * 0.22, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(w * 0.82, h * 0.18, Math.min(w, h) * 0.22, 0, Math.PI * 2); ctx.fill();
 
         const blanketTop = h * 0.76;
         ctx.fillStyle = 'rgba(230, 57, 70, 0.24)';
@@ -1259,79 +516,55 @@
         const w = this.width, h = this.height;
 
         if (this.currentScene === 'meadow') {
-          const sunGrad = ctx.createRadialGradient(w * 0.8, h * 0.15, 10, w * 0.8, h * 0.15, w * 0.65);
-          sunGrad.addColorStop(0, 'rgba(242, 181, 68, 0.24)');
-          sunGrad.addColorStop(1, 'rgba(242, 181, 68, 0)');
-          ctx.fillStyle = sunGrad;
-          ctx.fillRect(0, 0, w, h);
-
           ctx.fillStyle = 'rgba(244, 248, 249, 0.75)';
           for (const s of this.seeds) {
-            s.x = (s.x + s.vx * dt + w) % w;
-            s.y = (s.y + s.vy * dt + h) % h;
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
-            ctx.fill();
+            s.x = (s.x + s.vx * dt + w) % w; s.y = (s.y + s.vy * dt + h) % h;
+            ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, Math.PI * 2); ctx.fill();
           }
         } else if (this.currentScene === 'aquarium') {
-          const standOff = 68;
+          const standOff = 75;
           for (const c of this.critters) {
+            c.swimPhase += dt * (c.isButterfly ? 7 : 4.5);
             if (playTarget && dt > 0) {
               const dx = playTarget.x - c.x, dy = playTarget.y - c.y;
               const dist = Math.hypot(dx, dy);
-              if (dist > standOff && dist < 420) {
-                c.vx += ((dx / dist) * 125 - c.vx) * 3.2 * dt;
-                c.vy += ((dy / dist) * 125 - c.vy) * 3.2 * dt;
+              if (dist > standOff && dist < 450) {
+                c.vx += ((dx / dist) * 110 - c.vx) * 2.5 * dt;
+                c.vy += ((dy / dist) * 110 - c.vy) * 2.5 * dt;
               } else if (dist <= standOff && dist > 1) {
-                c.vx += (-dy / dist) * 80 * dt;
-                c.vy += (dx / dist) * 80 * dt;
+                c.vx += (-dy / dist) * 70 * dt;
+                c.vy += (dx / dist) * 70 * dt;
               }
+            } else {
+              c.vx += Math.sin(c.swimPhase * 0.4) * 15 * dt;
+              c.vy += Math.cos(c.swimPhase * 0.3) * 15 * dt;
             }
-            c.x += c.vx * dt;
-            c.y += c.vy * dt;
-            c.wingPhase += dt * 10;
-            if (c.x < 30 || c.x > w - 30) c.vx *= -1;
-            if (c.y < 30 || c.y > h - 30) c.vy *= -1;
-            c.x = Math.max(20, Math.min(w - 20, c.x));
-            c.y = Math.max(20, Math.min(h - 20, c.y));
-            c.angle = Math.atan2(c.vy, c.vx);
+            c.vx = Math.max(-130, Math.min(130, c.vx)); c.vy = Math.max(-130, Math.min(130, c.vy));
+            c.x += c.vx * dt; c.y += c.vy * dt;
+            if (c.x < 50 || c.x > w - 50) c.vx *= -1;
+            if (c.y < 50 || c.y > h - 50) c.vy *= -1;
+            c.x = Math.max(30, Math.min(w - 30, c.x)); c.y = Math.max(30, Math.min(h - 30, c.y));
+            c.angle += (Math.atan2(c.vy, c.vx) - c.angle) * 0.1;
 
             ctx.save();
-            ctx.translate(c.x, c.y);
-            ctx.rotate(c.angle);
+            ctx.translate(c.x, c.y); ctx.scale(c.sizeScale, c.sizeScale); ctx.rotate(c.angle);
             if (c.isButterfly) {
-              const wingSpread = 10 + Math.sin(c.wingPhase) * 6;
+              const wingFlap = Math.sin(c.swimPhase * 1.8) * 14;
               ctx.fillStyle = c.color;
               ctx.beginPath();
-              ctx.ellipse(0, -wingSpread * 0.6, 12, wingSpread, 0, 0, Math.PI * 2);
-              ctx.ellipse(0, wingSpread * 0.6, 12, wingSpread, 0, 0, Math.PI * 2);
+              ctx.ellipse(0, -12 - wingFlap * 0.5, 9, 18 + wingFlap, 0, 0, Math.PI * 2);
+              ctx.ellipse(0, 12 + wingFlap * 0.5, 9, 18 + wingFlap, 0, 0, Math.PI * 2);
               ctx.fill();
-              ctx.fillStyle = '#1F3038';
-              ctx.fillRect(-10, -2, 20, 4);
+              ctx.fillStyle = '#1F3038'; ctx.fillRect(-8, -2, 16, 4);
             } else {
+              const tailWag = Math.sin(c.swimPhase) * 10;
               ctx.fillStyle = c.color;
+              ctx.beginPath(); ctx.ellipse(0, 0, 24, 11, 0, 0, Math.PI * 2); ctx.fill();
               ctx.beginPath();
-              ctx.ellipse(0, 0, 20, 9, 0, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.beginPath();
-              ctx.moveTo(-16, 0);
-              ctx.lineTo(-28, -9 + Math.sin(c.wingPhase) * 3);
-              ctx.lineTo(-28, 9 + Math.sin(c.wingPhase) * 3);
-              ctx.closePath();
+              ctx.moveTo(-18, 0); ctx.quadraticCurveTo(-30, tailWag, -42, tailWag * 1.5); ctx.quadraticCurveTo(-30, tailWag * 0.5, -18, 0);
               ctx.fill();
             }
             ctx.restore();
-          }
-        } else if (this.currentScene === 'rain') {
-          ctx.strokeStyle = 'rgba(244, 248, 249, 0.55)';
-          ctx.lineWidth = 2;
-          for (const drop of this.raindrops) {
-            drop.y += drop.vy * dt;
-            if (drop.y > h) { drop.y = -10; drop.x = Math.random() * w; }
-            ctx.beginPath();
-            ctx.moveTo(drop.x, drop.y);
-            ctx.lineTo(drop.x - 2, drop.y + drop.r * 5);
-            ctx.stroke();
           }
         } else if (this.currentScene === 'fireflies') {
           for (const f of this.fireflies) {
@@ -1339,33 +572,23 @@
               const dx = playTarget.x - f.x, dy = playTarget.y - f.y;
               const dist = Math.hypot(dx, dy);
               if (dist > 45 && dist < 360) {
-                f.vx += (dx / dist) * 90 * dt;
-                f.vy += (dy / dist) * 90 * dt;
+                f.vx += (dx / dist) * 90 * dt; f.vy += (dy / dist) * 90 * dt;
               }
             }
-            f.vx = Math.max(-75, Math.min(75, f.vx));
-            f.vy = Math.max(-75, Math.min(75, f.vy));
-            f.x = (f.x + f.vx * dt + w) % w;
-            f.y = (f.y + f.vy * dt + h) % h;
+            f.vx = Math.max(-75, Math.min(75, f.vx)); f.vy = Math.max(-75, Math.min(75, f.vy));
+            f.x = (f.x + f.vx * dt + w) % w; f.y = (f.y + f.vy * dt + h) % h;
             f.phase += dt * 4;
             const glow = 0.45 + 0.55 * Math.sin(f.phase);
             const rad = ctx.createRadialGradient(f.x, f.y, 1, f.x, f.y, 18);
-            rad.addColorStop(0, `rgba(242, 181, 68, ${glow})`);
-            rad.addColorStop(1, 'rgba(242, 181, 68, 0)');
-            ctx.fillStyle = rad;
-            ctx.beginPath();
-            ctx.arc(f.x, f.y, 18, 0, Math.PI * 2);
-            ctx.fill();
+            rad.addColorStop(0, `rgba(242, 181, 68, ${glow})`); rad.addColorStop(1, 'rgba(242, 181, 68, 0)');
+            ctx.fillStyle = rad; ctx.beginPath(); ctx.arc(f.x, f.y, 18, 0, Math.PI * 2); ctx.fill();
           }
         }
       }
     }
 
     class PhotoTrayManager {
-      constructor(maxPhotos = 8) {
-        this.maxPhotos = maxPhotos;
-        this.photos = [];
-      }
+      constructor(maxPhotos = 8) { this.maxPhotos = maxPhotos; this.photos = []; }
       isFull() { return this.photos.length >= this.maxPhotos; }
       async captureFramedBlob(stageCanvas, includeDate = true) {
         const pad = 28, bottomPad = 78;
@@ -1374,18 +597,13 @@
         exportCanvas.height = stageCanvas.height + pad + bottomPad;
         const ctx = exportCanvas.getContext('2d');
 
-        ctx.fillStyle = '#F4F8F9';
-        ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-        ctx.fillStyle = '#7FC8C2';
-        ctx.fillRect(pad, exportCanvas.height - bottomPad + 6, stageCanvas.width, 3);
+        ctx.fillStyle = '#F4F8F9'; ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        ctx.fillStyle = '#7FC8C2'; ctx.fillRect(pad, exportCanvas.height - bottomPad + 6, stageCanvas.width, 3);
         ctx.drawImage(stageCanvas, pad, pad);
 
         if (includeDate) {
           const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-          ctx.fillStyle = '#1F3038';
-          ctx.font = 'bold 30px Caveat, cursive';
-          ctx.textAlign = 'right';
-          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#1F3038'; ctx.font = 'bold 30px Caveat, cursive'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
           ctx.fillText(`Picnic Glass • ${dateStr}`, exportCanvas.width - pad - 6, exportCanvas.height - bottomPad * 0.45);
         }
 
@@ -1395,8 +613,7 @@
             const url = URL.createObjectURL(blob);
             const item = { id: `picnic-${Date.now()}`, url, blob, createdAt: new Date() };
             if (this.photos.length >= this.maxPhotos) {
-              const evicted = this.photos.shift();
-              URL.revokeObjectURL(evicted.url);
+              const evicted = this.photos.shift(); URL.revokeObjectURL(evicted.url);
             }
             this.photos.push(item);
             resolve({ item });
@@ -1405,16 +622,10 @@
       }
       removePhoto(id) {
         const idx = this.photos.findIndex((p) => p.id === id);
-        if (idx !== -1) {
-          const [removed] = this.photos.splice(idx, 1);
-          URL.revokeObjectURL(removed.url);
-        }
+        if (idx !== -1) { const [removed] = this.photos.splice(idx, 1); URL.revokeObjectURL(removed.url); }
       }
     }
 
-    /* =========================================================================
-       6. MAIN APPLICATION CONTROLLER
-       ========================================================================= */
     class PicnicPhotoboothApp {
       constructor() {
         this.videoEl = document.getElementById('camera-video');
@@ -1429,19 +640,13 @@
         this.fogCtx = this.fogBuffer.getContext('2d');
 
         this.fogEngine = new FogEngine(320, 180);
-        this.marksLayer = new MarksLayer(1280, 720);
         this.sceneManager = new SceneManager(1280, 720);
         this.trayManager = new PhotoTrayManager(8);
         this.tracker = new VisionTracker();
-        this.arbitrator = new InteractionArbitrator();
         this.handSmoother = new PointSmoother(0.45, 220);
 
         this.cameraActive = false;
         this.activeTool = 'write';
-        this.lipstickColor = '#E63946';
-        this.stampMode = 'draw';
-        this.calibratedBaseline = 1.0;
-
         this.pointerDown = false;
         this.pointerPos = null;
         this.lastStrokePos = null;
@@ -1465,13 +670,10 @@
         document.getElementById('btn-start-camera').addEventListener('click', () => this.startCamera());
         document.getElementById('btn-try-demo').addEventListener('click', () => this.startDemoMode());
         document.getElementById('btn-retry-camera').addEventListener('click', () => this.startCamera());
-        document.getElementById('btn-skip-calib').addEventListener('click', () => {
-          document.getElementById('calibration-overlay').classList.add('hidden');
-        });
 
         document.getElementById('select-scene').addEventListener('change', (e) => {
           this.sceneManager.setScene(e.target.value);
-          this.showToast('Scene changed — glass fog and marks preserved.');
+          this.showToast('Scene changed — glass fog preserved.');
         });
 
         const btnPause = document.getElementById('btn-pause-scene');
@@ -1481,10 +683,6 @@
           btnPause.textContent = this.sceneManager.paused ? 'Resume Motion' : 'Pause Motion';
         });
 
-        document.getElementById('btn-undo').addEventListener('click', () => this.handleUndo());
-        document.getElementById('btn-clear-glass').addEventListener('click', () => this.clearGlassOnly());
-        document.getElementById('btn-clear-marks').addEventListener('click', () => this.clearMarksOnly());
-        document.getElementById('btn-reset-scene').addEventListener('click', () => this.resetScene());
         document.getElementById('btn-toggle-tray').addEventListener('click', (e) => {
           const tray = document.getElementById('photo-tray');
           const hidden = tray.classList.toggle('hidden');
@@ -1498,24 +696,6 @@
           btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
         });
 
-        document.querySelectorAll('.swatch').forEach((sw) => {
-          sw.addEventListener('click', () => {
-            document.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
-            sw.classList.add('active');
-            this.lipstickColor = sw.dataset.color;
-          });
-        });
-        document.getElementById('select-stamp-mode').addEventListener('change', (e) => {
-          this.stampMode = e.target.value;
-        });
-
-        const btnFog = document.getElementById('btn-fog-pulse');
-        btnFog.addEventListener('pointerdown', () => {
-          this.fogKeyHeld = true;
-          this.triggerBoundedFogPulse();
-        });
-        window.addEventListener('pointerup', () => { this.fogKeyHeld = false; });
-
         document.getElementById('btn-photo').addEventListener('click', () => this.startCountdown());
         document.getElementById('btn-cancel-countdown').addEventListener('click', () => this.cancelCountdown('Countdown cancelled.'));
 
@@ -1528,23 +708,12 @@
           const tag = document.activeElement?.tagName;
           const isInputFocused = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON';
           if (e.key === 'Escape' && this.countdownActive) {
-            e.preventDefault();
-            this.cancelCountdown('Countdown cancelled.');
-            return;
+            e.preventDefault(); this.cancelCountdown('Countdown cancelled.'); return;
           }
           if (isInputFocused) return;
           if (e.code === 'Space' && !this.countdownActive) {
-            e.preventDefault();
-            this.startCountdown();
-          } else if (e.key === 'f' || e.key === 'F') {
-            this.fogKeyHeld = true;
-            this.triggerBoundedFogPulse();
-          } else if (e.key === 'c' || e.key === 'C') {
-            this.clearGlassOnly();
+            e.preventDefault(); this.startCountdown();
           }
-        });
-        window.addEventListener('keyup', (e) => {
-          if (e.key === 'f' || e.key === 'F') this.fogKeyHeld = false;
         });
       }
 
@@ -1557,7 +726,6 @@
           btn.classList.toggle('active', active);
           btn.setAttribute('aria-checked', String(active));
         });
-        document.getElementById('lipstick-settings').classList.toggle('hidden', toolName !== 'lipstick');
       }
 
       async startCamera() {
@@ -1565,36 +733,27 @@
         this.updateStatus('Starting camera...', 'warn');
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: false
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false
           });
           this.videoEl.srcObject = stream;
           await this.videoEl.play();
           this.cameraActive = true;
           document.getElementById('btn-retry-camera').classList.add('hidden');
 
-          this.updateStatus('Loading on-device AI...', 'warn');
+          this.updateStatus('Loading AI Face & Hand Trackers...', 'warn');
           const res = await this.tracker.init();
           if (res.ready) {
             this.updateStatus('Camera & Tracking Ready', 'ready');
-            this.showToast('Make an "O" mouth to fog, or point your index finger to draw!');
-            if (document.getElementById('chk-calibrate-mouth').checked) {
-              this.runMouthCalibration();
-            }
+            this.showToast('Make an "O" mouth to fog, point index to write, or fist to wipe!');
           } else {
             this.updateStatus('Camera Ready (Pointer Mode)', 'warn');
             this.showToast('Tracking models unavailable; mouse and touch controls active.');
           }
         } catch (err) {
           this.cameraActive = false;
-          const msg = err.name === 'NotAllowedError'
-            ? 'Camera permission blocked'
-            : err.name === 'NotFoundError'
-              ? 'No camera found'
-              : 'Camera unavailable';
-          this.updateStatus(msg, 'error');
+          this.updateStatus('Camera unavailable', 'error');
           document.getElementById('btn-retry-camera').classList.remove('hidden');
-          this.showToast(`${msg}. Running with Picnic Demo background.`);
+          this.showToast('Running with Picnic Demo background.');
         }
       }
 
@@ -1606,32 +765,7 @@
         this.cameraActive = false;
         document.getElementById('intro-overlay').classList.add('hidden');
         this.updateStatus('Picnic Demo Mode', 'ready');
-        this.showToast('Hold F to breathe fog and drag on the glass to draw!');
-      }
-
-      runMouthCalibration() {
-        const overlay = document.getElementById('calibration-overlay');
-        const bar = document.getElementById('calib-progress');
-        overlay.classList.remove('hidden');
-        const samples = [];
-        const start = performance.now();
-        const duration = 2200;
-        const tick = (now) => {
-          if (overlay.classList.contains('hidden')) return;
-          bar.style.width = `${Math.min(100, ((now - start) / duration) * 100)}%`;
-          if (this.lastMouthRawScore > 0.2) samples.push(this.lastMouthRawScore);
-          if (now - start < duration) {
-            requestAnimationFrame(tick);
-          } else {
-            if (samples.length > 5) {
-              const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
-              this.calibratedBaseline = Math.max(0.65, Math.min(1.35, avg / 0.55));
-              this.showToast('Mouth fog calibration complete!');
-            }
-            overlay.classList.add('hidden');
-          }
-        };
-        requestAnimationFrame(tick);
+        this.showToast('Drag on the glass to draw!');
       }
 
       handleResize() {
@@ -1643,15 +777,10 @@
             this.cancelCountdown('Window size changed; countdown cancelled.');
           }
         }
-        this.stageCanvas.width = w;
-        this.stageCanvas.height = h;
-        this.uiCanvas.width = w;
-        this.uiCanvas.height = h;
-        this.sharpBuffer.width = w;
-        this.sharpBuffer.height = h;
-        this.fogBuffer.width = w;
-        this.fogBuffer.height = h;
-        this.marksLayer.resize(w, h);
+        this.stageCanvas.width = w; this.stageCanvas.height = h;
+        this.uiCanvas.width = w; this.uiCanvas.height = h;
+        this.sharpBuffer.width = w; this.sharpBuffer.height = h;
+        this.fogBuffer.width = w; this.fogBuffer.height = h;
         this.sceneManager.resize(w, h);
       }
 
@@ -1660,37 +789,21 @@
         this.stageCanvas.setPointerCapture?.(e.pointerId);
         this.pointerDown = true;
         const pos = this.getPointerPos(e);
-        this.pointerPos = pos;
-        this.lastStrokePos = pos;
-        this.arbitrator.setPointerActive(true, performance.now());
-
-        if (this.activeTool !== 'play') {
-          this.marksLayer.pushUndo(this.fogEngine.cloneDensity());
-          this.updateUndoButton();
-        }
-        if (this.activeTool === 'lipstick' && this.stampMode !== 'draw') {
-          this.marksLayer.placeStamp(pos.x, pos.y, this.stampMode, this.lipstickColor);
-        } else {
-          this.applyToolSegment(pos, pos);
-        }
+        this.pointerPos = pos; this.lastStrokePos = pos;
+        this.applyToolSegment(pos, pos);
       }
 
       onPointerMove(e) {
         const pos = this.getPointerPos(e);
         this.pointerPos = pos;
         if (!this.pointerDown || this.countdownActive) return;
-        if (this.activeTool === 'lipstick' && this.stampMode !== 'draw') return;
         if (this.lastStrokePos) this.applyToolSegment(this.lastStrokePos, pos);
         this.lastStrokePos = pos;
       }
 
       onPointerUp(e) {
-        if (this.stageCanvas.hasPointerCapture?.(e.pointerId)) {
-          this.stageCanvas.releasePointerCapture(e.pointerId);
-        }
-        this.pointerDown = false;
-        this.lastStrokePos = null;
-        this.arbitrator.setPointerActive(false, performance.now());
+        if (this.stageCanvas.hasPointerCapture?.(e.pointerId)) this.stageCanvas.releasePointerCapture(e.pointerId);
+        this.pointerDown = false; this.lastStrokePos = null;
       }
 
       getPointerPos(e) {
@@ -1705,42 +818,8 @@
         if (this.activeTool === 'write') {
           this.fogEngine.clearSegment(nx0, ny0, nx1, ny1, 0.032 * scaleMultiplier);
         } else if (this.activeTool === 'wipe') {
-          this.fogEngine.clearSegment(nx0, ny0, nx1, ny1, 0.068 * scaleMultiplier);
-          this.marksLayer.wipeSegment(p0.x, p0.y, p1.x, p1.y, 42 * scaleMultiplier);
-        } else if (this.activeTool === 'lipstick' && this.stampMode === 'draw') {
-          this.marksLayer.drawLipstickSegment(p0.x, p0.y, p1.x, p1.y, this.lipstickColor, 11 * scaleMultiplier);
+          this.fogEngine.clearSegment(nx0, ny0, nx1, ny1, 0.075 * scaleMultiplier);
         }
-      }
-
-      triggerBoundedFogPulse() {
-        if (this.countdownActive) return;
-        const now = performance.now();
-        if (now - this.lastFogPulseMs < 110) return;
-        this.lastFogPulseMs = now;
-        this.fogEngine.addBreath(0.5, 0.55, 0.16, 1.45);
-      }
-
-      clearGlassOnly() {
-        this.marksLayer.pushUndo(this.fogEngine.cloneDensity());
-        this.fogEngine.clearAll();
-        this.updateUndoButton();
-      }
-      clearMarksOnly() {
-        this.marksLayer.pushUndo(this.fogEngine.cloneDensity());
-        this.marksLayer.clearAll();
-        this.updateUndoButton();
-      }
-      resetScene() {
-        this.marksLayer.pushUndo(this.fogEngine.cloneDensity());
-        this.fogEngine.clearAll();
-        this.marksLayer.clearAll();
-        this.updateUndoButton();
-      }
-      handleUndo() {
-        if (this.marksLayer.popUndo(this.fogEngine)) this.updateUndoButton();
-      }
-      updateUndoButton() {
-        document.getElementById('btn-undo').disabled = !this.marksLayer.canUndo();
       }
 
       startCountdown() {
@@ -1750,8 +829,7 @@
         const overlay = document.getElementById('countdown-overlay');
         const numEl = document.getElementById('countdown-number');
         overlay.classList.remove('hidden');
-        let remaining = 3;
-        numEl.textContent = String(remaining);
+        let remaining = 3; numEl.textContent = String(remaining);
 
         this.countdownTimer = setInterval(() => {
           remaining -= 1;
@@ -1769,9 +847,7 @@
       cancelCountdown(reason) {
         if (!this.countdownActive) return;
         if (this.countdownTimer) clearInterval(this.countdownTimer);
-        this.countdownTimer = null;
-        this.countdownActive = false;
-        this.lockedDimensions = null;
+        this.countdownTimer = null; this.countdownActive = false; this.lockedDimensions = null;
         document.getElementById('countdown-overlay').classList.add('hidden');
         this.showToast(reason);
       }
@@ -1784,8 +860,7 @@
         } catch (err) {
           console.error(err);
         } finally {
-          this.countdownActive = false;
-          this.lockedDimensions = null;
+          this.countdownActive = false; this.lockedDimensions = null;
         }
       }
 
@@ -1799,47 +874,26 @@
           return;
         }
         for (const photo of [...this.trayManager.photos].reverse()) {
-          const card = document.createElement('div');
-          card.className = 'photo-card';
-          const img = document.createElement('img');
-          img.src = photo.url;
-          img.alt = 'Captured picnic print';
-
-          const actions = document.createElement('div');
-          actions.className = 'photo-card-actions';
-          const saveBtn = document.createElement('a');
-          saveBtn.className = 'btn btn-primary';
-          saveBtn.href = photo.url;
-          saveBtn.download = `${photo.id}.png`;
-          saveBtn.textContent = 'Save';
-
-          const delBtn = document.createElement('button');
-          delBtn.type = 'button';
-          delBtn.className = 'btn btn-secondary';
-          delBtn.textContent = 'Delete';
-          delBtn.addEventListener('click', () => {
-            this.trayManager.removePhoto(photo.id);
-            this.renderPhotoTray();
-          });
-
-          actions.append(saveBtn, delBtn);
-          card.append(img, actions);
-          list.appendChild(card);
+          const card = document.createElement('div'); card.className = 'photo-card';
+          const img = document.createElement('img'); img.src = photo.url; img.alt = 'Captured print';
+          const actions = document.createElement('div'); actions.className = 'photo-card-actions';
+          const saveBtn = document.createElement('a'); saveBtn.className = 'btn btn-primary'; saveBtn.href = photo.url; saveBtn.download = `${photo.id}.png`; saveBtn.textContent = 'Save';
+          const delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.className = 'btn btn-secondary'; delBtn.textContent = 'Delete';
+          delBtn.addEventListener('click', () => { this.trayManager.removePhoto(photo.id); this.renderPhotoTray(); });
+          actions.append(saveBtn, delBtn); card.append(img, actions); list.appendChild(card);
         }
       }
 
       updateStatus(text, state = 'ready') {
         document.getElementById('status-text').textContent = text;
-        const dot = document.getElementById('status-dot');
-        dot.className = 'status-dot';
+        const dot = document.getElementById('status-dot'); dot.className = 'status-dot';
         if (state === 'ready') dot.classList.add('ready');
         if (state === 'error') dot.classList.add('error');
       }
 
       showToast(msg) {
         const toast = document.getElementById('toast-banner');
-        toast.textContent = msg;
-        toast.classList.remove('hidden');
+        toast.textContent = msg; toast.classList.remove('hidden');
         clearTimeout(this.toastTimeout);
         this.toastTimeout = setTimeout(() => toast.classList.add('hidden'), 3400);
       }
@@ -1850,7 +904,6 @@
         const w = this.stageCanvas.width, h = this.stageCanvas.height;
 
         if (!this.countdownActive) {
-          if (this.fogKeyHeld) this.triggerBoundedFogPulse();
           this.processTracking(nowMs, dtSec);
           this.fogEngine.step(dtSec);
         }
@@ -1863,80 +916,56 @@
         if (!this.cameraActive || !this.tracker.isReady) return;
 
         const detection = this.tracker.detect(this.videoEl, nowMs);
-        if (detection) this.lastDetection = detection;
-        if (!this.lastDetection) return;
+        if (!detection) return;
 
         const vw = this.videoEl.videoWidth || 1280, vh = this.videoEl.videoHeight || 720;
         const sw = this.stageCanvas.width, sh = this.stageCanvas.height;
 
-        const mouthEval = evaluateMouthPose(
-          this.lastDetection.faceLandmarks,
-          this.lastDetection.blendshapes,
-          this.calibratedBaseline
-        );
-        this.lastMouthRawScore = mouthEval.score;
-
-        const handEval = evaluateHandPose(this.lastDetection.handLandmarks);
-        const arb = this.arbitrator.update({
-          mouthScore: mouthEval.score,
-          handPose: handEval.pose,
-          nowMs
-        });
-
-        if (mouthEval.mouthCenter) {
-          const mStage = mapNormalizedToStage(mouthEval.mouthCenter.x, mouthEval.mouthCenter.y, vw, vh, sw, sh, true);
-          if (arb.mouthProgress > 0.05) {
-            this.uiCtx.save();
-            this.uiCtx.strokeStyle = arb.mouthActive ? '#7FC8C2' : '#F2B544';
-            this.uiCtx.lineWidth = 4;
-            this.uiCtx.beginPath();
-            this.uiCtx.arc(mStage.x, mStage.y, 24, -Math.PI * 0.5, -Math.PI * 0.5 + Math.PI * 2 * arb.mouthProgress);
-            this.uiCtx.stroke();
-            this.uiCtx.restore();
-          }
-          if (arb.mouthActive) {
+        if (detection.faceLandmarks) {
+          const mouthEval = evaluateMouthPose(detection.faceLandmarks, detection.blendshapes);
+          if (mouthEval.mouthCenter && mouthEval.score > 0.48) {
+            const mStage = mapNormalizedToStage(mouthEval.mouthCenter.x, mouthEval.mouthCenter.y, vw, vh, sw, sh, true);
             this.fogEngine.addBreath(mStage.x / sw, mStage.y / sh, dtSec, 1.25);
           }
         }
 
-        if (handEval.indexTip) {
-          const rawTip = mapNormalizedToStage(handEval.indexTip.x, handEval.indexTip.y, vw, vh, sw, sh, true);
-          if (this.lastDetection.handReacquired) {
-            this.handSmoother.reset();
-            this.lastHandStrokePos = null;
-          }
-          const tip = this.handSmoother.update(rawTip.x, rawTip.y, nowMs);
-          this.trackedHandPos = tip;
+        if (detection.handLandmarks) {
+          const handEval = evaluateHandPose(detection.handLandmarks);
+          if (handEval.pose === 'point' && handEval.indexTip && this.activeTool === 'write') {
+            const rawTip = mapNormalizedToStage(handEval.indexTip.x, handEval.indexTip.y, vw, vh, sw, sh, true);
+            const tip = this.handSmoother.update(rawTip.x, rawTip.y, nowMs);
+            this.trackedHandPos = tip;
 
-          this.uiCtx.save();
-          this.uiCtx.strokeStyle = '#F4F8F9';
-          this.uiCtx.lineWidth = 3;
-          this.uiCtx.beginPath();
-          this.uiCtx.arc(tip.x, tip.y, 14, 0, Math.PI * 2);
-          if (arb.handApplying) {
-            this.uiCtx.fillStyle = this.activeTool === 'lipstick' ? this.lipstickColor : '#7FC8C2';
-            this.uiCtx.fill();
-          }
-          this.uiCtx.stroke();
-          this.uiCtx.restore();
+            this.uiCtx.save();
+            this.uiCtx.strokeStyle = '#F4F8F9'; this.uiCtx.lineWidth = 3;
+            this.uiCtx.beginPath(); this.uiCtx.arc(tip.x, tip.y, 14, 0, Math.PI * 2);
+            if (this.activeTool === 'write') { this.uiCtx.fillStyle = '#7FC8C2'; this.uiCtx.fill(); }
+            this.uiCtx.stroke();
+            this.uiCtx.restore();
 
-          if (arb.handApplying) {
-            if (!this.lastHandStrokePos) {
-              this.marksLayer.pushUndo(this.fogEngine.cloneDensity());
-              this.updateUndoButton();
-              if (this.activeTool === 'lipstick' && this.stampMode !== 'draw') {
-                this.marksLayer.placeStamp(tip.x, tip.y, this.stampMode, this.lipstickColor);
-              }
-            }
-            const prev = this.lastHandStrokePos || tip;
-            this.applyToolSegment(prev, tip, Math.max(0.75, Math.min(1.5, handEval.handScale * 6)));
+            if (!this.lastHandStrokePos) this.lastHandStrokePos = tip;
+            this.applyToolSegment(this.lastHandStrokePos, tip, Math.max(0.75, Math.min(1.5, handEval.handScale * 6)));
             this.lastHandStrokePos = tip;
+          } else if (handEval.pose === 'fist' && handEval.fistCenter) {
+            const rawFist = mapNormalizedToStage(handEval.fistCenter.x, handEval.fistCenter.y, vw, vh, sw, sh, true);
+            const fist = this.handSmoother.update(rawFist.x, rawFist.y, nowMs);
+            this.trackedHandPos = fist;
+
+            this.uiCtx.save();
+            this.uiCtx.strokeStyle = '#F4F8F9'; this.uiCtx.lineWidth = 3;
+            this.uiCtx.beginPath(); this.uiCtx.arc(fist.x, fist.y, 24, 0, Math.PI * 2);
+            this.uiCtx.fillStyle = 'rgba(230, 57, 70, 0.7)'; this.uiCtx.fill();
+            this.uiCtx.stroke();
+            this.uiCtx.restore();
+
+            if (!this.lastHandStrokePos) this.lastHandStrokePos = fist;
+            const prev = this.lastHandStrokePos;
+            const w_w = this.stageCanvas.width, h_h = this.stageCanvas.height;
+            this.fogEngine.clearSegment(prev.x / w_w, prev.y / h_h, fist.x / w_w, fist.y / h_h, 0.08);
+            this.lastHandStrokePos = fist;
           } else {
-            this.lastHandStrokePos = null;
+            this.trackedHandPos = null; this.lastHandStrokePos = null;
           }
-        } else {
-          this.trackedHandPos = null;
-          this.lastHandStrokePos = null;
         }
       }
 
@@ -1948,8 +977,7 @@
           const vw = this.videoEl.videoWidth, vh = this.videoEl.videoHeight;
           const { scale, offsetX, offsetY } = computeCoverTransform(vw, vh, w, h);
           sCtx.save();
-          sCtx.translate(w, 0);
-          sCtx.scale(-1, 1);
+          sCtx.translate(w, 0); sCtx.scale(-1, 1);
           sCtx.drawImage(this.videoEl, offsetX, offsetY, vw * scale, vh * scale);
           sCtx.restore();
         } else {
@@ -1979,16 +1007,6 @@
         fCtx.restore();
 
         this.stageCtx.drawImage(this.fogBuffer, 0, 0);
-        this.stageCtx.drawImage(this.marksLayer.canvas, 0, 0);
-
-        this.stageCtx.fillStyle = 'rgba(244, 248, 249, 0.7)';
-        for (const d of this.fogEngine.drips) {
-          const dx = (d.x / this.fogEngine.gridWidth) * w;
-          const dy = (d.y / this.fogEngine.gridHeight) * h;
-          this.stageCtx.beginPath();
-          this.stageCtx.arc(dx, dy, 3.2, 0, Math.PI * 2);
-          this.stageCtx.fill();
-        }
       }
     }
 
