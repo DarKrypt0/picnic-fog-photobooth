@@ -6,7 +6,7 @@ const { test } = require('node:test');
 
 // Exercise the actual inline entry point, not the separate js/app.js implementation.
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const moduleSource = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
+const moduleSource = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^\s*import .*?;$/gm, '');
 
 function renderer(cameraActive) {
   const scheduled = [];
