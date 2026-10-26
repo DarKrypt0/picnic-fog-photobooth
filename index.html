@@ -887,4 +887,27 @@
 
         const fCtx = this.fogCtx;
         fCtx.clearRect(0, 0, w, h);
-        fCtx.
+        fCtx.save();
+        fCtx.filter = 'blur(12px) brightness(1.06)';
+        fCtx.drawImage(this.sharpBuffer, 0, 0);
+        f_restore = fCtx.restore();
+
+        fCtx.fillStyle = 'rgba(214, 226, 232, 0.42)';
+        fCtx.fillRect(0, 0, w, h);
+
+        const maskCanvas = this.fogEngine.renderMaskCanvas();
+        fCtx.save();
+        fCtx.globalCompositeOperation = 'destination-in';
+        fCtx.drawImage(maskCanvas, 0, 0, w, h);
+        fCtx.restore();
+
+        this.stageCtx.drawImage(this.fogBuffer, 0, 0);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      window.picnicApp = new PicnicPhotoboothApp();
+    });
+  </script>
+</body>
+</html>
