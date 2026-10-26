@@ -1,5 +1,7 @@
 # Picnic Glass — Fog Photobooth
 
+For the updated open-palm eraser, beak feeding gesture and 3D koi/goldfish behavior, see [Pond controls](POND-CONTROLS.md).
+
 A browser-based interactive glass photobooth with a cozy picnic conservatory theme. Breathe an "O" shape to fog the glass, write with your fingertip, stamp berry lipstick marks, attract pond koi and butterflies in Play mode, and snap Polaroid-style picnic prints.
 
 ## Features

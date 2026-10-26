@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <style>
     :root {
       --slate-glass: #1F3038;
@@ -89,6 +88,9 @@
       .photo-list { flex-direction: row; overflow-x: auto; }
       .photo-card { min-width: 150px; }
     }
+    .stage-container { z-index: auto; }
+    .intro-overlay { position: fixed; z-index: 30; }
+    .picnic-card { max-height: calc(100dvh - 40px); overflow-y: auto; }
   </style>
 </head>
 <body>
@@ -116,9 +118,10 @@
             <strong>Camera frames are processed on this device</strong> and never uploaded.
           </p>
           <ul class="intro-steps">
-            <li><strong>😮 Make an "O" mouth pose</strong> to breathe vapor/fog onto the glass[cite: 1, 2].</li>
-            <li><strong>☝️ Point index finger</strong> to write; <strong>✊ Make a fist</strong> to wipe clean[cite: 2, 3].</li>
-            <li><strong>📸 Press Photo</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake[cite: 2].</li>
+            <li><strong>😮 Make an "O" mouth pose</strong> to breathe vapor/fog onto the glass.</li>
+            <li><strong>☝️ Point index finger</strong> to write; <strong>🖐️ Spread your palm toward the camera</strong> to wipe clean.</li>
+            <li><strong>📸 Press Photo</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake.</li>
+            <li><strong>Pond:</strong> point to guide the fish. Bring all five fingertips together like a beak, hold, then release to drop another portion. Other hands scare them away. Use Play and Drop fish food without a camera.</li>
           </ul>
           <div class="intro-actions">
             <button id="btn-start-camera" type="button" class="btn btn-primary">Start Camera</button>
@@ -141,7 +144,7 @@
         <label for="select-scene" class="control-label">Scene:</label>
         <select id="select-scene" class="scene-select">
           <option value="meadow">🌻 Sunny Picnic Meadow</option>
-          <option value="aquarium">🦋 3D Koi &amp; Butterflies</option>
+          <option value="aquarium">🐟 3D Koi &amp; Goldfish</option>
           <option value="fireflies">✨ Twilight Fireflies</option>
         </select>
         <button id="btn-pause-scene" type="button" class="btn btn-compact" aria-pressed="false" title="Pause scene animation">
@@ -171,19 +174,20 @@
     </aside>
 
     <footer class="bottom-toolbar" role="toolbar" aria-label="Glass drawing and capture controls">
+      <p id="gesture-status" role="status" style="flex-basis:100%;font-size:.78rem;color:var(--fog-color)">Show an open palm to erase · point to guide · beak to feed</p>
       <div class="tool-group" role="radiogroup" aria-label="Active glass tool">
         <button type="button" class="btn tool-btn active" data-tool="write" role="radio" aria-checked="true">
           ☝️ Write
         </button>
         <button type="button" class="btn tool-btn" data-tool="wipe" role="radio" aria-checked="false">
-          ✊ Fist Wipe
+          🖐️ Palm Wipe
         </button>
         <button type="button" class="btn tool-btn" data-tool="play" role="radio" aria-checked="false">
           🦋 Play
         </button>
       </div>
 
-      <div class="capture-cluster">
+      <div class="capture-cluster"><button id="btn-feed-fish" type="button" class="btn" title="Drop a portion near the center of the pond">Drop fish food</button>
         <button id="btn-photo" type="button" class="btn btn-amber btn-capture" title="Start 3-second photo countdown (Space)">
           📸 Photo
         </button>
@@ -192,6 +196,9 @@
   </div>
 
   <script type="module">
+    import { evaluateHandPose, GestureGate } from './js/input/hand-gestures.js';
+    import { PondSimulation } from './js/scenes/pond.js';
+    import { FishRenderer } from './js/scenes/fish-renderer.js';
     function computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight) {
       if (!videoWidth || !videoHeight || !stageWidth || !stageHeight) return { scale: 1, offsetX: 0, offsetY: 0 };
       const videoAspect = videoWidth / videoHeight;
@@ -261,33 +268,6 @@
       return {
         score: blendScore,
         mouthCenter: { x: (upperLip.x + lowerLip.x) * 0.5, y: (upperLip.y + lowerLip.y) * 0.5 }
-      };
-    }
-
-    function evaluateHandPose(handLandmarks) {
-      if (!handLandmarks || handLandmarks.length < 21) return { pose: 'none', indexTip: null, fistCenter: null, handScale: 0.1 };
-      const wrist = handLandmarks[0];
-      const middleMcp = handLandmarks[9];
-      const handScale = Math.max(0.04, Math.hypot(middleMcp.x - wrist.x, middleMcp.y - wrist.y));
-      const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-
-      const indexExtended = dist(handLandmarks[8], wrist) > dist(handLandmarks[6], wrist) * 1.12;
-      const middleExtended = dist(handLandmarks[12], wrist) > dist(handLandmarks[10], wrist) * 1.12;
-      const ringExtended = dist(handLandmarks[16], wrist) > dist(handLandmarks[14], wrist) * 1.12;
-      const pinkyExtended = dist(handLandmarks[20], wrist) > dist(handLandmarks[18], wrist) * 1.12;
-
-      let pose = 'neutral';
-      if (indexExtended && !middleExtended && !ringExtended && !pinkyExtended) {
-        pose = 'point';
-      } else if (!indexExtended && !middleExtended && !ringExtended && !pinkyExtended) {
-        pose = 'fist';
-      }
-
-      return {
-        pose,
-        indexTip: { x: handLandmarks[8].x, y: handLandmarks[8].y },
-        fistCenter: { x: middleMcp.x, y: middleMcp.y },
-        handScale
       };
     }
 
@@ -449,42 +429,12 @@
           x: Math.random() * width, y: Math.random() * height, vx: 18 + Math.random() * 20, vy: -10 - Math.random() * 15
         }));
 
-        this.threeScene = new THREE.Scene();
-        this.threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-        this.threeCamera.position.set(0, 0, 15);
-        this.threeRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        this.threeRenderer.setSize(width, height);
-        this.threeCanvas = this.threeRenderer.domElement;
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
-        this.threeScene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xfff5cc, 2.0);
-        dirLight.position.set(5, 10, 7);
-        this.threeScene.add(dirLight);
-
-        this.koiModels = [];
-        const loader = new THREE.GLTFLoader();
-        loader.load('./models/koi.glb', (gltf) => {
-          for (let i = 0; i < 4; i++) {
-            const koi = gltf.scene.clone();
-            koi.scale.set(0.8, 0.8, 0.8);
-            koi.position.set((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 3);
-            this.threeScene.add(koi);
-            this.koiModels.push({
-              mesh: koi,
-              velocity: new THREE.Vector3((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 2, 0),
-              swimPhase: Math.random() * Math.PI * 2
-            });
-          }
-        }, undefined, (err) => {
-          console.warn('Could not load models/koi.glb', err);
-        });
+        this.pond = new PondSimulation();
+        this.fishRenderer = new FishRenderer(window.THREE, width, height, this.pond.fish);
       }
       resize(width, height) {
         this.width = width; this.height = height;
-        this.threeCamera.aspect = width / height;
-        this.threeCamera.updateProjectionMatrix();
-        this.threeRenderer.setSize(width, height);
+        this.fishRenderer.resize(width, height);
       }
       setScene(sceneId) { this.currentScene = sceneId; }
       renderDemoBackground(ctx) {
@@ -492,6 +442,8 @@
         const grad = ctx.createLinearGradient(0, 0, 0, h);
         if (this.currentScene === 'fireflies') {
           grad.addColorStop(0, '#16262E'); grad.addColorStop(1, '#28433A');
+        } else if (this.currentScene === 'aquarium') {
+          grad.addColorStop(0, '#24585f'); grad.addColorStop(.5, '#4d9995'); grad.addColorStop(1, '#9ac3a7');
         } else {
           grad.addColorStop(0, '#88D4CD'); grad.addColorStop(0.65, '#CDEAC0'); grad.addColorStop(1, '#7FB069');
         }
@@ -508,20 +460,13 @@
             ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, Math.PI * 2); ctx.fill();
           }
         } else if (this.currentScene === 'aquarium') {
-          for (const item of this.koiModels) {
-            item.swimPhase += dt * 4;
-            item.mesh.position.addScaledVector(item.velocity, dt);
-            item.mesh.rotation.y = Math.sin(item.swimPhase) * 0.3;
-            if (item.mesh.position.x > 6 || item.mesh.position.x < -6) item.velocity.x *= -1;
-            if (item.mesh.position.y > 3 || item.mesh.position.y < -3) item.velocity.y *= -1;
-          }
-          this.threeRenderer.render(this.threeScene, this.threeCamera);
-          ctx.drawImage(this.threeCanvas, 0, 0);
+          this.pond.step(dt, playTarget);
+          this.fishRenderer.render(ctx, this.pond);
         } else if (this.currentScene === 'fireflies') {
           for (const f of this.fireflies) {
             f.x = (f.x + f.vx * dt + w) % w; f.y = (f.y + f.vy * dt + h) % h;
             f.phase += dt * 4;
-            const glow = 0.45 + 0.55 * Math.sin(f.phase);
+            const glow = 0.5 + 0.5 * Math.sin(f.phase);
             const rad = ctx.createRadialGradient(f.x, f.y, 1, f.x, f.y, 18);
             rad.addColorStop(0, `rgba(242, 181, 68, ${glow})`); rad.addColorStop(1, 'rgba(242, 181, 68, 0)');
             ctx.fillStyle = rad; ctx.beginPath(); ctx.arc(f.x, f.y, 18, 0, Math.PI * 2); ctx.fill();
@@ -582,6 +527,9 @@
         this.tracker = new VisionTracker();
         this.handSmoother = new PointSmoother(0.45, 220);
 
+        this.gestureGate = new GestureGate();
+        this.pondHand = null;
+        this.lastHandSeen = -Infinity;
         this.cameraActive = false;
         this.activeTool = 'write';
         this.pointerDown = false;
@@ -631,11 +579,30 @@
           btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
         });
 
+        document.getElementById('btn-feed-fish').addEventListener('click', () => {
+          if (this.countdownActive || this.sceneManager.paused) return;
+          if (this.sceneManager.currentScene !== 'aquarium') {
+            document.getElementById('select-scene').value = 'aquarium';
+            this.sceneManager.setScene('aquarium');
+          }
+          const now = performance.now();
+          if (now - (this.lastPointerFeed ?? -Infinity) < 1200) return;
+          this.lastPointerFeed = now;
+          const p = this.pointerPos || { x: this.stageCanvas.width * .5, y: this.stageCanvas.height * .55 };
+          this.sceneManager.pond.dropFood(p.x / this.stageCanvas.width, p.y / this.stageCanvas.height);
+          this.showToast('Food dropped. The fish will gather here.');
+        });
+        window.addEventListener('pagehide', event => {
+          this.videoEl.srcObject?.getTracks().forEach(track => track.stop());
+          this.cameraActive = false; this.pondHand = null;
+          if (!event.persisted) this.sceneManager.fishRenderer.dispose();
+        });
         document.getElementById('btn-photo').addEventListener('click', () => this.startCountdown());
         document.getElementById('btn-cancel-countdown').addEventListener('click', () => this.cancelCountdown('Countdown cancelled.'));
 
         this.stageCanvas.addEventListener('pointerdown', (e) => this.onPointerDown(e));
         this.stageCanvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
+        this.stageCanvas.addEventListener('pointerleave', () => { this.pointerPos = null; });
         this.stageCanvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
         this.stageCanvas.addEventListener('pointercancel', (e) => this.onPointerUp(e));
 
@@ -644,7 +611,7 @@
           if (e.key === 'Escape' && this.countdownActive) {
             e.preventDefault(); this.cancelCountdown('Countdown cancelled.'); return;
           }
-          if (tag === 'INPUT' || tag === 'SELECT') return;
+          if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(tag) || document.activeElement?.isContentEditable) return;
           if (e.code === 'Space' && !this.countdownActive) {
             e.preventDefault(); this.startCountdown();
           }
@@ -672,7 +639,7 @@
           const res = await this.tracker.init();
           if (res.ready) {
             this.updateStatus('Camera & Tracking Ready', 'ready');
-            this.showToast('Make an "O" mouth to fog, point index to write, or fist to wipe!');
+            this.showToast('Make an "O" mouth to fog, point index to write, or hold an open palm forward to wipe!');
           } else {
             this.updateStatus('Camera Ready (Pointer Mode)', 'warn');
           }
@@ -684,6 +651,8 @@
       }
 
       startDemoMode() {
+        this.pondHand = null; this.lastHandStrokePos = null; this.lastHandMode = null;
+        this.gestureGate.reset();
         if (this.videoEl.srcObject) { this.videoEl.srcObject.getTracks().forEach((t) => t.stop()); this.videoEl.srcObject = null; }
         this.cameraActive = false;
         document.getElementById('intro-overlay').classList.add('hidden');
@@ -691,8 +660,11 @@
       }
 
       handleResize() {
+        const stage = this.stageCanvas.parentElement;
+        stage.style.top = document.querySelector('.top-bar').offsetHeight + 'px';
+        stage.style.bottom = document.querySelector('.bottom-toolbar').offsetHeight + 'px';
         const rect = this.stageCanvas.parentElement.getBoundingClientRect();
-        const w = Math.max(320, Math.round(rect.width)), h = Math.max(240, Math.round(rect.height));
+        const w = Math.max(1, Math.round(rect.width)), h = Math.max(1, Math.round(rect.height));
         this.stageCanvas.width = w; this.stageCanvas.height = h;
         this.uiCanvas.width = w; this.uiCanvas.height = h;
         this.sharpBuffer.width = w; this.sharpBuffer.height = h;
@@ -827,6 +799,11 @@
       processTracking(nowMs, dtSec) {
         this.uiCtx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
         if (!this.cameraActive || !this.tracker.isReady) return;
+        if (nowMs - this.lastHandSeen > 180) {
+          this.pondHand = null; this.lastHandStrokePos = null; this.lastHandMode = null;
+          this.gestureGate.update('none', nowMs);
+          document.getElementById('gesture-status').textContent = 'Show an open palm to erase · point to guide · beak to feed';
+        }
 
         const detection = this.tracker.detect(this.videoEl, nowMs);
         if (!detection) return;
@@ -842,26 +819,32 @@
           }
         }
 
-        if (detection.handLandmarks) {
-          const handEval = evaluateHandPose(detection.handLandmarks);
-          if (handEval.pose === 'point' && handEval.indexTip && this.activeTool === 'write') {
-            const rawTip = mapNormalizedToStage(handEval.indexTip.x, handEval.indexTip.y, vw, vh, sw, sh, true);
-            const tip = this.handSmoother.update(rawTip.x, rawTip.y, nowMs);
-            if (!this.lastHandStrokePos) this.lastHandStrokePos = tip;
-            this.applyToolSegment(this.lastHandStrokePos, tip, Math.max(0.75, Math.min(1.5, handEval.handScale * 6)));
-            this.lastHandStrokePos = tip;
-          } else if (handEval.pose === 'fist' && handEval.fistCenter) {
-            const rawFist = mapNormalizedToStage(handEval.fistCenter.x, handEval.fistCenter.y, vw, vh, sw, sh, true);
-            const fist = this.handSmoother.update(rawFist.x, rawFist.y, nowMs);
-            if (!this.lastHandStrokePos) this.lastHandStrokePos = fist;
-            const prev = this.lastHandStrokePos;
-            const w_w = this.stageCanvas.width, h_h = this.stageCanvas.height;
-            this.fogEngine.clearSegment(prev.x / w_w, prev.y / h_h, fist.x / w_w, fist.y / h_h, 0.08);
-            this.lastHandStrokePos = fist;
-          } else {
-            this.lastHandStrokePos = null;
-          }
+        if (!detection.handLandmarks) {
+          this.gestureGate.update('none', nowMs);
+          this.pondHand = null; this.lastHandStrokePos = null; return;
         }
+        this.lastHandSeen = nowMs;
+        const hand = evaluateHandPose(detection.handLandmarks);
+        const state = this.gestureGate.update(hand.pose, nowMs);
+        const center = state.pose === 'point' ? hand.indexTip : state.pose === 'beak' ? hand.beakCenter : hand.palmCenter;
+        if (!center) { this.pondHand = null; this.lastHandStrokePos = null; return; }
+        const pos = mapNormalizedToStage(center.x, center.y, vw, vh, sw, sh, true);
+        this.pondHand = { x: pos.x / sw, y: pos.y / sh, pose: state.pose === 'none' ? 'neutral' : state.pose };
+        document.getElementById('gesture-status').textContent = state.pose === 'palm' ? 'Open palm · erasing' : state.pose === 'beak' ? 'Beak · feeding' : state.pose === 'point' ? 'Point · fish following' : 'Hand detected · hold a gesture';
+        if (state.feed && this.sceneManager.currentScene === 'aquarium' && !this.sceneManager.paused) {
+          this.sceneManager.pond.dropFood(pos.x / sw, pos.y / sh);
+          this.showToast('Food dropped. Release the beak gesture to feed again.');
+        }
+        const mode = state.pose === 'palm' ? 'erase' : state.pose === 'point' && this.activeTool === 'write' ? 'write' : null;
+        if (!mode || this.pointerDown) { this.lastHandStrokePos = null; this.lastHandMode = null; return; }
+        if (this.lastHandMode !== mode) { this.lastHandStrokePos = null; this.handSmoother.reset(); }
+        this.lastHandMode = mode;
+        const tip = this.handSmoother.update(pos.x, pos.y, nowMs);
+        const prev = this.lastHandStrokePos || tip;
+        if (mode === 'erase') {
+          this.fogEngine.clearSegment(prev.x / sw, prev.y / sh, tip.x / sw, tip.y / sh, .085);
+        } else this.applyToolSegment(prev, tip, Math.max(.75, Math.min(1.5, hand.handScale * 6)));
+        this.lastHandStrokePos = tip;
       }
 
       renderComposite(dtSec, w, h) {
@@ -879,7 +862,8 @@
           this.sceneManager.renderDemoBackground(sCtx);
         }
 
-        const playTarget = this.activeTool === 'play' ? (this.pointerPos || this.trackedHandPos) : null;
+        const pointerTarget = this.activeTool === 'play' && this.pointerPos ? { x: this.pointerPos.x / w, y: this.pointerPos.y / h, pose: 'point' } : null;
+        const playTarget = this.pondHand || pointerTarget;
         this.sceneManager.renderScene(sCtx, this.countdownActive ? 0 : dtSec, playTarget);
 
         this.stageCtx.clearRect(0, 0, w, h);
