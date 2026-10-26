@@ -22,23 +22,44 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      width: 100%; height: 100%; overflow: hidden; background-color: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); user-select: none; -webkit-user-select: none;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--slate-glass);
+      color: var(--frost-white);
+      font-family: var(--font-ui);
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;
+    }
     .hidden { display: none !important; }
 
-    .app-shell { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
-    .stage-container { position: absolute; inset: 0; overflow: hidden; z-index: 1; touch-action: none; }
-    .stage-canvas, .ui-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+    .app-shell {
+      position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between;
+    }
+
+    .stage-container {
+      position: absolute; inset: 0; overflow: hidden; z-index: 1; touch-action: none;
+    }
+
+    .stage-canvas, .ui-canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block;
+    }
     .ui-canvas { pointer-events: none; z-index: 2; }
 
     .top-bar, .bottom-toolbar {
       position: relative; z-index: 10; background: var(--slate-glass-alpha); backdrop-filter: blur(8px); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid rgba(244, 248, 249, 0.12);
     }
-    .bottom-toolbar { border-bottom: none; border-top: 2px solid rgba(244, 248, 249, 0.12); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+    .bottom-toolbar {
+      border-bottom: none; border-top: 2px solid rgba(244, 248, 249, 0.12); padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
 
-    .brand-cluster, .scene-selector, .top-utilities, .tool-group, .capture-cluster { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .brand-cluster, .scene-selector, .top-utilities, .tool-group, .capture-cluster {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
 
     .btn {
       min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.25); background: rgba(31, 48, 56, 0.9); color: var(--frost-white); font-family: var(--font-ui); font-size: 0.92rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease, border-color 0.15s ease; text-decoration: none;
@@ -52,27 +73,43 @@
     .btn-amber { background: var(--lamp-amber); color: var(--slate-glass); border-color: #fff; font-weight: 700; }
     .btn-capture { padding: 0 22px; font-size: 1rem; }
 
-    .scene-select { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.3); background: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); font-weight: 600; }
+    .scene-select {
+      min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.3); background: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); font-weight: 600;
+    }
 
-    .status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,0.35); font-size: 0.85rem; font-weight: 600; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,0.35); font-size: 0.85rem; font-weight: 600;
+    }
     .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lamp-amber); }
     .status-dot.ready { background: var(--meadow-teal); }
     .status-dot.error { background: #E63946; }
 
-    .intro-overlay { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(31, 48, 56, 0.45); }
-    .picnic-card { max-width: 520px; width: 100%; background: var(--slate-glass-alpha); backdrop-filter: blur(12px); border: 2px solid rgba(244, 248, 249, 0.3); border-radius: 18px; padding: 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.45); }
-    .picnic-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(242, 181, 68, 0.2); color: var(--lamp-amber); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; }
+    .intro-overlay {
+      position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(31, 48, 56, 0.45);
+    }
+    .picnic-card {
+      max-width: 520px; width: 100%; background: var(--slate-glass-alpha); backdrop-filter: blur(12px); border: 2px solid rgba(244, 248, 249, 0.3); border-radius: 18px; padding: 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+    .picnic-badge {
+      display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(242, 181, 68, 0.2); color: var(--lamp-amber); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;
+    }
     .caveat-title { font-family: var(--font-hand); font-size: 2.8rem; color: var(--frost-white); line-height: 1.1; margin-bottom: 10px; }
     .intro-lead { font-size: 0.98rem; line-height: 1.5; color: var(--fog-color); margin-bottom: 14px; }
     .intro-steps { list-style: none; display: grid; gap: 8px; margin-bottom: 14px; font-size: 0.92rem; }
     .intro-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 
-    .countdown-overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(31, 48, 56, 0.25); }
+    .countdown-overlay {
+      position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(31, 48, 56, 0.25);
+    }
     .countdown-number { font-family: var(--font-hand); font-size: 7rem; font-weight: 700; color: var(--lamp-amber); text-shadow: 0 4px 20px rgba(0,0,0,0.65); }
 
-    .toast-banner { position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 15; background: var(--slate-glass-alpha); border: 1.5px solid var(--meadow-teal); color: var(--frost-white); padding: 8px 18px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; pointer-events: none; text-align: center; }
+    .toast-banner {
+      position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 15; background: var(--slate-glass-alpha); border: 1.5px solid var(--meadow-teal); color: var(--frost-white); padding: 8px 18px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; pointer-events: none; text-align: center;
+    }
 
-    .photo-tray { position: absolute; top: 66px; right: 12px; bottom: 74px; width: 250px; z-index: 12; background: var(--slate-glass-alpha); backdrop-filter: blur(10px); border: 1.5px solid rgba(244, 248, 249, 0.2); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .photo-tray {
+      position: absolute; top: 66px; right: 12px; bottom: 74px; width: 250px; z-index: 12; background: var(--slate-glass-alpha); backdrop-filter: blur(10px); border: 1.5px solid rgba(244, 248, 249, 0.2); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+    }
     .tray-title { font-family: var(--font-hand); font-size: 1.6rem; }
     .tray-subtitle { font-size: 0.75rem; color: var(--fog-color); }
     .tray-warning { background: rgba(242, 181, 68, 0.2); border: 1px solid var(--lamp-amber); color: var(--lamp-amber); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px; }
@@ -148,6 +185,8 @@
       </div>
 
       <div class="top-utilities">
+        <button id="btn-clear-glass" type="button" class="btn btn-compact" title="Clear condensation only (C)">Clear Glass (C)</button>
+        <button id="btn-reset-scene" type="button" class="btn btn-compact" title="Reset all fog">Reset Scene</button>
         <button id="btn-toggle-tray" type="button" class="btn btn-compact" aria-expanded="true">
           Photos (<span id="photo-count">0</span>/8)
         </button>
@@ -182,6 +221,9 @@
       </div>
 
       <div class="capture-cluster">
+        <button id="btn-fog-pulse" type="button" class="btn btn-secondary" title="Add bounded fog pulse (Hold F)">
+          💨 Add Fog (F)
+        </button>
         <button id="btn-photo" type="button" class="btn btn-amber btn-capture" title="Start 3-second photo countdown (Space)">
           📸 Photo
         </button>
@@ -683,6 +725,8 @@
           btnPause.textContent = this.sceneManager.paused ? 'Resume Motion' : 'Pause Motion';
         });
 
+        document.getElementById('btn-clear-glass').addEventListener('click', () => this.clearGlassOnly());
+        document.getElementById('btn-reset-scene').addEventListener('click', () => this.resetScene());
         document.getElementById('btn-toggle-tray').addEventListener('click', (e) => {
           const tray = document.getElementById('photo-tray');
           const hidden = tray.classList.toggle('hidden');
@@ -695,6 +739,12 @@
         document.querySelectorAll('.tool-btn').forEach((btn) => {
           btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
         });
+
+        const btnFog = document.getElementById('btn-fog-pulse');
+        btnFog.addEventListener('pointerdown', () => {
+          this.fogKeyHeld = true; this.triggerFogPulse();
+        });
+        window.addEventListener('pointerup', () => { this.fogKeyHeld = false; });
 
         document.getElementById('btn-photo').addEventListener('click', () => this.startCountdown());
         document.getElementById('btn-cancel-countdown').addEventListener('click', () => this.cancelCountdown('Countdown cancelled.'));
@@ -713,7 +763,14 @@
           if (isInputFocused) return;
           if (e.code === 'Space' && !this.countdownActive) {
             e.preventDefault(); this.startCountdown();
+          } else if (e.key === 'f' || e.key === 'F') {
+            this.fogKeyHeld = true; this.triggerFogPulse();
+          } else if (e.key === 'c' || e.key === 'C') {
+            this.clearGlassOnly();
           }
+        });
+        window.addEventListener('keyup', (e) => {
+          if (e.key === 'f' || e.key === 'F') this.fogKeyHeld = false;
         });
       }
 
@@ -765,7 +822,7 @@
         this.cameraActive = false;
         document.getElementById('intro-overlay').classList.add('hidden');
         this.updateStatus('Picnic Demo Mode', 'ready');
-        this.showToast('Drag on the glass to draw!');
+        this.showToast('Hold F to add fog and drag on the glass to draw!');
       }
 
       handleResize() {
@@ -821,6 +878,17 @@
           this.fogEngine.clearSegment(nx0, ny0, nx1, ny1, 0.075 * scaleMultiplier);
         }
       }
+
+      triggerFogPulse() {
+        if (this.countdownActive) return;
+        const now = performance.now();
+        if (now - this.lastFogPulseMs < 110) return;
+        this.lastFogPulseMs = now;
+        this.fogEngine.addBreath(0.5, 0.55, 0.16, 1.3);
+      }
+
+      clearGlassOnly() { this.fogEngine.clearAll(); }
+      resetScene() { this.fogEngine.clearAll(); }
 
       startCountdown() {
         if (this.countdownActive) return;
@@ -904,6 +972,7 @@
         const w = this.stageCanvas.width, h = this.stageCanvas.height;
 
         if (!this.countdownActive) {
+          if (this.fogKeyHeld) this.triggerFogPulse();
           this.processTracking(nowMs, dtSec);
           this.fogEngine.step(dtSec);
         }
@@ -921,6 +990,7 @@
         const vw = this.videoEl.videoWidth || 1280, vh = this.videoEl.videoHeight || 720;
         const sw = this.stageCanvas.width, sh = this.stageCanvas.height;
 
+        // 1. Mouth Fog Tracking
         if (detection.faceLandmarks) {
           const mouthEval = evaluateMouthPose(detection.faceLandmarks, detection.blendshapes);
           if (mouthEval.mouthCenter && mouthEval.score > 0.48) {
@@ -929,9 +999,10 @@
           }
         }
 
+        // 2. Hand Gesture Tracking (Point to write, Fist to wipe)
         if (detection.handLandmarks) {
           const handEval = evaluateHandPose(detection.handLandmarks);
-          if (handEval.pose === 'point' && handEval.indexTip && this.activeTool === 'write') {
+          if (handEval.pose === 'point' && handEval.indexTip) {
             const rawTip = mapNormalizedToStage(handEval.indexTip.x, handEval.indexTip.y, vw, vh, sw, sh, true);
             const tip = this.handSmoother.update(rawTip.x, rawTip.y, nowMs);
             this.trackedHandPos = tip;
@@ -943,9 +1014,13 @@
             this.uiCtx.stroke();
             this.uiCtx.restore();
 
-            if (!this.lastHandStrokePos) this.lastHandStrokePos = tip;
-            this.applyToolSegment(this.lastHandStrokePos, tip, Math.max(0.75, Math.min(1.5, handEval.handScale * 6)));
-            this.lastHandStrokePos = tip;
+            if (this.activeTool === 'write') {
+              if (!this.lastHandStrokePos) this.lastHandStrokePos = tip;
+              this.applyToolSegment(this.lastHandStrokePos, tip, Math.max(0.75, Math.min(1.5, handEval.handScale * 6)));
+              this.lastHandStrokePos = tip;
+            } else {
+              this.lastHandStrokePos = null;
+            }
           } else if (handEval.pose === 'fist' && handEval.fistCenter) {
             const rawFist = mapNormalizedToStage(handEval.fistCenter.x, handEval.fistCenter.y, vw, vh, sw, sh, true);
             const fist = this.handSmoother.update(rawFist.x, rawFist.y, nowMs);
