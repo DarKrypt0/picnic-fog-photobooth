@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Picnic Glass — Fog Photobooth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="description" content="An interactive garden photobooth. Draw in the mist, decorate your window, and save a print. Camera processing stays on your device.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <video id="camera-video" playsinline muted class="sr-only"></video>
+
+    <main id="stage-container" class="stage-container" aria-label="Interactive glass photobooth pane">
+      <canvas id="stage-canvas" class="stage-canvas"></canvas>
+      <canvas id="ui-canvas" class="ui-canvas" aria-hidden="true"></canvas>
+
+      <div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+      <div id="toast-banner" class="toast-banner hidden" role="status"></div>
+
+      <div id="countdown-overlay" class="countdown-overlay hidden" role="dialog" aria-label="Photo countdown">
+        <span id="countdown-number" class="countdown-number">3</span>
+        <button id="btn-cancel-countdown" type="button" class="btn btn-amber">Cancel (Esc)</button>
+      </div>
+
+      <section id="intro-overlay" class="intro-overlay" aria-labelledby="intro-title">
+        <div class="intro-card picnic-card">
+          <div class="picnic-badge">THE GARDEN STUDIO</div>
+          <h1 id="intro-title" class="caveat-title">A little mist.<br>A little magic.</h1>
+          <p class="intro-lead">
+            Play with a misty greenhouse window overlooking a sunny picnic meadow.
+            <strong>Camera frames are processed on this device</strong> and never uploaded.
+          </p>
+          <ul class="intro-steps">
+            <li><strong>😮 Make an "O" mouth pose</strong> to breathe vapor/fog onto the glass.</li>
+            <li><strong>☝️ Point index finger</strong> to write; <strong>✊ Make a fist</strong> to wipe with the Wipe tool.</li>
+            <li><strong>📸 Press Photo</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake.</li>
+          </ul>
+          <label class="calibration-choice"><input id="chk-calibrate-mouth" type="checkbox"> Calibrate mouth gestures after starting</label><div class="intro-actions">
+            <button id="btn-start-camera" type="button" class="btn btn-primary">Start Camera</button>
+            <button id="btn-try-demo" type="button" class="btn btn-secondary">Explore without a camera</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <header class="top-bar" role="banner">
+      <div class="brand-cluster"><span class="wordmark">picnic<span>glass</span><small>AN INTERACTIVE PHOTO STUDIO</small></span>
+        <span class="status-pill" id="camera-status-pill" title="Camera and on-device tracking status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Demo Mode</span>
+        </span>
+        <button id="btn-retry-camera" type="button" class="btn btn-compact hidden">Retry Camera</button>
+      </div>
+
+      <div class="scene-selector" role="group" aria-label="Picnic window scene">
+        <label for="select-scene" class="control-label">Scene:</label>
+        <select id="select-scene" class="scene-select">
+          <option value="meadow">Sunny meadow</option>
+          <option value="aquarium">Koi pond</option>
+          <option value="rain">Sunshower</option>
+          <option value="fireflies">Twilight fireflies</option>
+        </select>
+        <button id="btn-pause-scene" type="button" class="btn btn-compact" aria-pressed="false" title="Pause scene animation">
+          Pause Motion
+        </button>
+      </div>
+
+      <div class="top-utilities">
+        <button id="btn-toggle-tray" type="button" class="btn btn-compact" aria-expanded="false" aria-controls="photo-tray">
+          Photos (<span id="photo-count">0</span>/8)
+        </button>
+        <button id="btn-help" type="button" class="btn btn-compact" aria-label="Show controls help">?</button>
+      </div>
+    </header>
+
+    <aside id="photo-tray" class="photo-tray hidden" aria-label="Captured picnic photos">
+      <div class="tray-header">
+        <h2 class="tray-title">Picnic Prints</h2>
+        <span class="tray-subtitle">Saved on user action only</span>
+      </div>
+      <div id="tray-warning" class="tray-warning hidden">
+        Tray full (8/8). Capturing a new photo will remove the oldest print.
+      </div>
+      <div id="photo-list" class="photo-list">
+        <p class="empty-tray-msg">No photos yet. Fog the glass and press <strong>Photo</strong>!</p>
+      </div>
+    </aside>
+
+    <aside class="studio-panel" aria-label="Creative controls">
+      <p class="eyebrow">MAKE IT YOURS</p><h2>Your window,<br>your story.</h2>
+      <p class="panel-hint">Add a breath of mist, then drag to leave a little message.</p>
+      <button id="btn-fog-pulse" type="button" class="btn btn-primary">Hold to fog <kbd>F</kbd></button>
+      <label for="brush-size">Brush size</label><input id="brush-size" type="range" min="0.4" max="2.5" step="0.1" value="1">
+      <div id="lipstick-settings" class="hidden"><label for="select-stamp-mode">Mark</label><select id="select-stamp-mode" class="scene-select"><option value="draw">Freehand ink</option><option value="kiss">Kiss</option><option value="berry">Strawberry</option><option value="daisy">Daisy</option></select><div class="swatches" aria-label="Ink color"><button class="swatch active" data-color="#B64758" aria-label="Berry ink" aria-pressed="true"></button><button class="swatch" data-color="#E8B65D" aria-label="Honey ink" aria-pressed="false"></button><button class="swatch" data-color="#639B88" aria-label="Sage ink" aria-pressed="false"></button><input id="ink-color" type="color" value="#B64758" aria-label="Custom ink color"></div></div>
+      <label for="select-frame">Print finish</label><select id="select-frame" class="scene-select"><option value="classic">Classic paper</option><option value="botanical">Botanical green</option><option value="midnight">Midnight</option><option value="none">Borderless</option></select>
+      <label class="date-choice"><input id="include-date" type="checkbox" checked> Date on print</label>
+      <div class="edit-actions"><button id="btn-undo" type="button" class="btn btn-compact" disabled>Undo</button><button id="btn-clear-glass" type="button" class="btn btn-compact">Clear mist</button><button id="btn-clear-marks" type="button" class="btn btn-compact">Clear ink</button><button id="btn-reset-scene" type="button" class="btn btn-compact">Reset</button></div>
+      <p class="privacy-note">Camera frames stay on this device. Prints live in memory until you save or leave.</p>
+    </aside>
+    <section id="calibration-overlay" class="intro-overlay hidden" aria-label="Calibrate mouth gestures"><div class="picnic-card"><h2>Make an “O” with your mouth</h2><p>Hold for a moment to tune the fog gesture.</p><div class="calib-track"><div id="calib-progress"></div></div><button id="btn-skip-calib" class="btn" type="button">Skip</button></div></section>
+    <footer class="bottom-toolbar" role="toolbar" aria-label="Glass drawing and capture controls">
+      <div class="tool-group" role="radiogroup" aria-label="Active glass tool">
+        <button type="button" class="btn tool-btn active" data-tool="write" role="radio" aria-checked="true">
+          Write in mist
+        </button>
+        <button type="button" class="btn tool-btn" data-tool="wipe" role="radio" aria-checked="false">
+          Wipe
+        </button>
+        <button type="button" class="btn tool-btn" data-tool="lipstick" role="radio" aria-checked="false">Ink &amp; stamps</button>
+        <button type="button" class="btn tool-btn" data-tool="play" role="radio" aria-checked="false">
+          Play
+        </button>
+      </div>
+
+      <div class="capture-cluster"><label for="select-timer">Timer</label><select id="select-timer" class="scene-select"><option value="0">Off</option><option value="3" selected>3 seconds</option><option value="5">5 seconds</option><option value="10">10 seconds</option></select>
+        <button id="btn-photo" type="button" class="btn btn-amber btn-capture" title="Capture using the selected timer (Space)">
+          Take a photo
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
