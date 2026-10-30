@@ -35,7 +35,9 @@ class PicnicPhotoboothApp {
     // State
     this.cameraActive = false;
     this.activeTool = 'write'; // 'write' | 'wipe' | 'lipstick' | 'play'
-    this.lipstickColor = '#E63946';
+    this.lipstickColor = '#B64758';
+    this.brushSize = 1;
+    this.captureOptions = null;
     this.stampMode = 'draw'; // 'draw' | 'kiss' | 'berry' | 'daisy'
     this.calibratedBaseline = 1.0;
 
@@ -60,6 +62,13 @@ class PicnicPhotoboothApp {
   }
 
   initDOM() {
+    this.sceneManager.paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('btn-pause-scene').setAttribute('aria-pressed', String(this.sceneManager.paused));
+    document.getElementById('btn-pause-scene').textContent = this.sceneManager.paused ? 'Resume Motion' : 'Pause Motion';
+    document.getElementById('brush-size').addEventListener('input', e => { this.brushSize = Number(e.target.value); });
+    document.getElementById('ink-color').addEventListener('input', e => { this.lipstickColor = e.target.value; });
+    window.addEventListener('blur', () => { this.fogKeyHeld = false; this.pointerDown = false; this.lastStrokePos = null; this.arbitrator.setPointerActive(false, performance.now()); });
+    window.addEventListener('pagehide', () => { this.stopCameraStream(); this.trayManager.clearAll(); });
     // Intro buttons
     document.getElementById('btn-start-camera').addEventListener('click', () => this.startCamera());
     document.getElementById('btn-try-demo').addEventListener('click', () => this.startDemoMode());
@@ -104,7 +113,8 @@ class PicnicPhotoboothApp {
     // Lipstick swatches & stamp mode
     document.querySelectorAll('.swatch').forEach((sw) => {
       sw.addEventListener('click', () => {
-        document.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
+        document.querySelectorAll('.swatch').forEach((s) => { s.classList.remove('active'); s.setAttribute('aria-pressed', 'false'); });
+        sw.setAttribute('aria-pressed', 'true');
         sw.classList.add('active');
         this.lipstickColor = sw.dataset.color;
       });
@@ -113,8 +123,18 @@ class PicnicPhotoboothApp {
       this.stampMode = e.target.value;
     });
 
+    document.querySelectorAll('[role="radiogroup"] .tool-btn').forEach((btn, index, buttons) => {
+      btn.addEventListener('keydown', e => {
+        if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+        e.preventDefault();
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (index + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+        buttons[next].click(); buttons[next].focus();
+      });
+    });
     // Fog & Photo controls
     const btnFog = document.getElementById('btn-fog-pulse');
+    btnFog.addEventListener('click', () => this.triggerBoundedFogPulse());
+    btnFog.addEventListener('pointercancel', () => { this.fogKeyHeld = false; });
     btnFog.addEventListener('pointerdown', () => {
       this.fogKeyHeld = true;
       this.triggerBoundedFogPulse();
@@ -123,6 +143,7 @@ class PicnicPhotoboothApp {
       this.fogKeyHeld = false;
     });
 
+    this.selectTool('write');
     document.getElementById('btn-photo').addEventListener('click', () => this.startCountdown());
     document.getElementById('btn-cancel-countdown').addEventListener('click', () => this.cancelCountdown('Countdown cancelled.'));
 
@@ -171,6 +192,7 @@ class PicnicPhotoboothApp {
       const active = btn.dataset.tool === toolName;
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-checked', String(active));
+      btn.tabIndex = active ? 0 : -1;
     });
 
     const lipSettings = document.getElementById('lipstick-settings');
@@ -178,6 +200,9 @@ class PicnicPhotoboothApp {
   }
 
   async startCamera() {
+    if (this.startingCamera) return;
+    this.startingCamera = true;
+    this.stopCameraStream();
     document.getElementById('intro-overlay').classList.add('hidden');
     this.updateStatus('Starting camera...', 'warn');
 
@@ -204,7 +229,7 @@ class PicnicPhotoboothApp {
         this.showToast('Tracking models unavailable; mouse and touch controls active.');
       }
     } catch (err) {
-      this.cameraActive = false;
+      this.stopCameraStream();
       const msg = err.name === 'NotAllowedError'
         ? 'Camera permission blocked'
         : err.name === 'NotFoundError'
@@ -213,7 +238,7 @@ class PicnicPhotoboothApp {
       this.updateStatus(msg, 'error');
       document.getElementById('btn-retry-camera').classList.remove('hidden');
       this.showToast(`${msg}. Running with Picnic Demo background.`);
-    }
+    } finally { this.startingCamera = false; }
   }
 
   startDemoMode() {
@@ -283,6 +308,7 @@ class PicnicPhotoboothApp {
     this.fogBuffer.height = h;
 
     this.marksLayer.resize(w, h);
+    this.updateUndoButton();
     this.sceneManager.resize(w, h);
   }
 
@@ -340,6 +366,7 @@ class PicnicPhotoboothApp {
 
   applyToolSegment(p0, p1, scaleMultiplier = 1) {
     if (this.activeTool === 'play' || this.countdownActive) return;
+    scaleMultiplier *= this.brushSize;
     const w = this.stageCanvas.width;
     const h = this.stageCanvas.height;
     const nx0 = p0.x / w;
@@ -407,9 +434,11 @@ class PicnicPhotoboothApp {
     const numEl = document.getElementById('countdown-number');
     overlay.classList.remove('hidden');
 
-    let remaining = 3;
+    this.captureOptions = { frame: document.getElementById('select-frame').value, includeDate: document.getElementById('include-date').checked };
+    let remaining = Number(document.getElementById('select-timer').value);
+    if (remaining === 0) { overlay.classList.add('hidden'); this.completePhotoCapture(); return; }
     numEl.textContent = String(remaining);
-    this.announce('Countdown started: 3');
+    this.announce(`Countdown started: ${remaining}`);
 
     this.countdownTimer = setInterval(() => {
       remaining -= 1;
@@ -440,8 +469,10 @@ class PicnicPhotoboothApp {
 
   async completePhotoCapture() {
     try {
-      const { item } = await this.trayManager.captureFramedBlob(this.stageCanvas, true);
+      await this.trayManager.captureFramedBlob(this.stageCanvas, this.captureOptions.includeDate, this.captureOptions.frame);
       this.renderPhotoTray();
+      document.getElementById('photo-tray').classList.remove('hidden');
+      document.getElementById('btn-toggle-tray').setAttribute('aria-expanded', 'true');
       this.announce('Picnic photo captured and added to tray.');
       this.showToast('📸 Picnic print added to tray!');
     } catch (err) {
@@ -566,7 +597,7 @@ class PicnicPhotoboothApp {
     const handEval = evaluateHandPose(this.lastDetection.handLandmarks);
     const arb = this.arbitrator.update({
       mouthScore: mouthEval.score,
-      handPose: handEval.pose,
+      handPose: this.activeTool === 'wipe' && handEval.pose === 'fist' ? 'point' : handEval.pose,
       nowMs
     });
 
@@ -583,7 +614,8 @@ class PicnicPhotoboothApp {
 
     // 2. Hand Tool Cursor & Application
     if (handEval.indexTip) {
-      const rawTip = mapNormalizedToStage(handEval.indexTip.x, handEval.indexTip.y, vw, vh, sw, sh, true);
+      const handPoint = this.activeTool === 'wipe' && handEval.pose === 'fist' ? handEval.fistCenter : handEval.indexTip;
+      const rawTip = mapNormalizedToStage(handPoint.x, handPoint.y, vw, vh, sw, sh, true);
       if (this.lastDetection.handReacquired) {
         this.handSmoother.reset();
         this.lastHandStrokePos = null;

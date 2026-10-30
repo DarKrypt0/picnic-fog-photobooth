@@ -15,6 +15,7 @@ export class MarksLayer {
 
   resize(newWidth, newHeight) {
     if (newWidth === this.canvas.width && newHeight === this.canvas.height) return;
+    this.undoStack.length = 0; // Snapshots use the previous canvas dimensions.
     const temp = document.createElement('canvas');
     temp.width = this.canvas.width;
     temp.height = this.canvas.height;

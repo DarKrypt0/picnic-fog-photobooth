@@ -22,6 +22,10 @@ export class SceneManager {
   }
 
   resize(width, height) {
+    for (const entity of [...this.critters, ...this.raindrops, ...this.fireflies, ...this.seeds]) {
+      entity.x *= width / this.width;
+      entity.y *= height / this.height;
+    }
     this.width = width;
     this.height = height;
   }
@@ -73,36 +77,55 @@ export class SceneManager {
    * Renders picnic demo background when running without a live webcam.
    */
   renderDemoBackground(ctx) {
-    const w = this.width;
-    const h = this.height;
-
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    if (this.currentScene === 'fireflies') {
-      grad.addColorStop(0, '#16262E');
-      grad.addColorStop(1, '#28433A');
-    } else {
-      grad.addColorStop(0, '#88D4CD');
-      grad.addColorStop(0.65, '#CDEAC0');
-      grad.addColorStop(1, '#7FB069');
+    if (!this.background || this.background.width !== this.width || this.background.height !== this.height || this.backgroundScene !== this.currentScene) {
+      this.background = document.createElement('canvas');
+      this.background.width = this.width; this.background.height = this.height;
+      this.backgroundScene = this.currentScene;
+      this.paintLandscape(this.background.getContext('2d'));
     }
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(this.background, 0, 0);
+  }
 
-    // Warm sunbeam
-    ctx.fillStyle = 'rgba(242, 181, 68, 0.22)';
-    ctx.beginPath();
-    ctx.arc(w * 0.82, h * 0.18, Math.min(w, h) * 0.22, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Subtle gingham picnic blanket strip at bottom of meadow
-    const blanketTop = h * 0.76;
-    ctx.fillStyle = 'rgba(230, 57, 70, 0.24)';
-    ctx.fillRect(0, blanketTop, w, h - blanketTop);
-    const checkSize = 36;
-    ctx.fillStyle = 'rgba(244, 248, 249, 0.22)';
-    for (let x = 0; x < w; x += checkSize * 2) {
-      ctx.fillRect(x, blanketTop, checkSize, h - blanketTop);
+  paintLandscape(ctx) {
+    const w = this.width, h = this.height;
+    const night = this.currentScene === 'fireflies';
+    const pond = this.currentScene === 'aquarium';
+    const rain = this.currentScene === 'rain';
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, night ? '#152c3c' : rain ? '#829eaa' : '#a7c8cb');
+    sky.addColorStop(.65, night ? '#46635e' : '#f3e6c5');
+    sky.addColorStop(1, '#859780'); ctx.fillStyle = sky; ctx.fillRect(0,0,w,h);
+    const glow=ctx.createRadialGradient(w*.69,h*.26,0,w*.69,h*.26,h*.55);
+    glow.addColorStop(0,night?'#e8efcd77':'#fff4d5cc'); glow.addColorStop(1,'#fff4d500');
+    ctx.fillStyle=glow; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=night?'#e8efcd':'#fff3cf'; ctx.beginPath();ctx.arc(w*.69,h*.26,h*.045,0,Math.PI*2);ctx.fill();
+    // Layered, softly contoured hills create depth without external image requests.
+    const colors=night?['#526f70','#385953','#244940','#183a32']:['#a1b5a0','#8fa98a','#6c8c70','#4e705a'];
+    colors.forEach((color,i)=>{
+      ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(0,h);
+      for(let x=0;x<=w+20;x+=20){ const y=h*(.49+i*.105)+Math.sin(x/w*5.5+i*1.7)*h*.065+Math.sin(x/w*11+i)*h*.016;ctx.lineTo(x,y); }
+      ctx.lineTo(w,h);ctx.closePath();ctx.fill();
+    });
+    if(pond){
+      const water=ctx.createLinearGradient(0,h*.65,0,h); water.addColorStop(0,'#9bb8ac');water.addColorStop(1,'#355f61');ctx.fillStyle=water;
+      ctx.beginPath();ctx.ellipse(w*.6,h*.88,w*.43,h*.21,-.08,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#e5ead440';ctx.lineWidth=1;
+      for(let i=0;i<18;i++){ctx.beginPath();ctx.ellipse(w*(.28+i*.032),h*(.76+(i%5)*.04),w*.04,2,0,0,Math.PI);ctx.stroke();}
     }
+    // Deterministic botanical silhouettes and tiny flower heads.
+    for(let i=0;i<95;i++){
+      const x=((i*7919)%1000)/1000*w, base=h*(.84+((i*37)%100)/625);
+      const stem=h*(.025+((i*13)%70)/1000);
+      ctx.strokeStyle=night?'#173d33':'#3f654c';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,base);ctx.quadraticCurveTo(x-8,base-stem*.6,x+2,base-stem);ctx.stroke();
+      ctx.fillStyle=night?'#b8caab55':i%3===0?'#e9bd83':'#e9e5ca';
+      for(let petal=0;petal<5;petal++){const a=petal*Math.PI*2/5;ctx.beginPath();ctx.ellipse(x+2+Math.cos(a)*3,base-stem+Math.sin(a)*3,2.4,1.7,a,0,Math.PI*2);ctx.fill();}
+    }
+    // Conservatory frame, fine mullions and edge shading.
+    const shade=ctx.createLinearGradient(0,0,w,0);shade.addColorStop(0,'#173d3455');shade.addColorStop(.22,'#173d3400');shade.addColorStop(.8,'#173d3400');shade.addColorStop(1,'#173d3455');ctx.fillStyle=shade;ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle=night?'#18302c':'#506653';ctx.lineWidth=12;
+    ctx.strokeRect(5,5,w-10,h-10);
+    ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(w*.34,0);ctx.lineTo(w*.34,h);ctx.moveTo(w*.73,0);ctx.lineTo(w*.73,h);ctx.moveTo(0,h*.38);ctx.lineTo(w,h*.38);ctx.stroke();
+    ctx.strokeStyle='#f8f1d733';ctx.lineWidth=1;ctx.strokeRect(13,13,w-26,h-26);
   }
 
   /**
@@ -218,7 +241,7 @@ export class SceneManager {
         f.y = (f.y + f.vy * dt + h) % h;
         f.phase += dt * 4;
 
-        const glow = 0.45 + 0.55 * Math.sin(f.phase);
+        const glow = 0.5 + 0.5 * Math.sin(f.phase);
         const rad = ctx.createRadialGradient(f.x, f.y, 1, f.x, f.y, 18);
         rad.addColorStop(0, `rgba(242, 181, 68, ${glow})`);
         rad.addColorStop(1, 'rgba(242, 181, 68, 0)');

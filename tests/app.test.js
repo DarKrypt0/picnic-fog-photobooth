@@ -2,6 +2,7 @@ import { evaluateMouthPose, evaluateHandPose, InteractionArbitrator } from '../j
 import { mapNormalizedToStage } from '../js/tracking/coordinates.js';
 import { FogEngine } from '../js/fog.js';
 import { MarksLayer } from '../js/marks.js';
+import { SceneManager } from '../js/scenes/scenes.js';
 import { PhotoTrayManager } from '../js/capture.js';
 
 const resultsList = document.getElementById('test-results');
@@ -83,11 +84,12 @@ async function runTests() {
 
   // 6. Undo restores marks and fog
   const marks = new MarksLayer(320, 180);
+  fog.addBreath(0.5, 0.5, 0.5, 1.2);
   const snap = fog.cloneDensity();
   marks.pushUndo(snap);
   fog.clearAll();
   marks.popUndo(fog);
-  assert(Math.abs(fog.density[0] - snap[0]) < 1e-5, 'Undo restores previous fog snapshot');
+  assert(snap[centerIdx] > 0 && Math.abs(fog.density[centerIdx] - snap[centerIdx]) < 1e-5, 'Undo restores previous fog snapshot');
 
   // 7. Capture tray caps at 8 and revokes URLs
   const tray = new PhotoTrayManager(8);
@@ -98,6 +100,26 @@ async function runTests() {
     await tray.captureFramedBlob(dummyStage, true);
   }
   assert(tray.photos.length === 8, 'Photo tray enforces 8-photo cap and evicts oldest');
+
+  for (const frame of ['classic', 'botanical', 'midnight', 'none']) {
+    const { item } = await tray.captureFramedBlob(dummyStage, true, frame);
+    const bitmap = await createImageBitmap(item.blob);
+    assert(bitmap.width === (frame === 'none' ? 320 : 376) && bitmap.height === (frame === 'none' ? 180 : 286), frame + ' export has correct dimensions');
+    assert(item.blob.type === 'image/png', frame + ' export is PNG');
+    bitmap.close();
+  }
+  tray.clearAll();
+  assert(tray.photos.length === 0, 'Clearing tray removes all photos');
+  const scenes = new SceneManager(320, 180);
+  const ctx = dummyStage.getContext('2d');
+  for (const scene of ['meadow', 'aquarium', 'rain', 'fireflies']) {
+    scenes.setScene(scene); scenes.renderDemoBackground(ctx); scenes.renderScene(ctx, .016);
+    assert(ctx.getImageData(160, 90, 1, 1).data[3] === 255, scene + ' paints an opaque landscape');
+  }
+  scenes.paused = true;
+  const position = scenes.fireflies[0].x;
+  scenes.renderScene(ctx, 1);
+  assert(scenes.fireflies[0].x === position, 'Pause freezes firefly motion');
 
   summaryEl.dataset.testComplete = 'true';
   summaryEl.dataset.failures = String(failures);

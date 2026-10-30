@@ -17,33 +17,33 @@ export class PhotoTrayManager {
   /**
    * Renders the stage canvas into a framed picnic print and returns a Blob + Object URL.
    */
-  async captureFramedBlob(stageCanvas, includeDate = true) {
-    const pad = 28;
-    const bottomPad = 78;
+  async captureFramedBlob(stageCanvas, includeDate = true, frame = 'classic') {
+    const pad = frame === 'none' ? 0 : 28;
+    const bottomPad = frame === 'none' ? 0 : 78;
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = stageCanvas.width + pad * 2;
     exportCanvas.height = stageCanvas.height + pad + bottomPad;
     const ctx = exportCanvas.getContext('2d');
 
     // Cool frost-white Polaroid frame
-    ctx.fillStyle = '#F4F8F9';
+    ctx.fillStyle = frame === 'midnight' ? '#203e38' : frame === 'botanical' ? '#e0e9d8' : '#faf6ed';
     ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
     // Subtle picnic gingham accent line along bottom
-    ctx.fillStyle = '#7FC8C2';
+    ctx.fillStyle = frame === 'none' ? 'transparent' : '#8da58a';
     ctx.fillRect(pad, exportCanvas.height - bottomPad + 6, stageCanvas.width, 3);
 
     // Draw the locked composition
     ctx.drawImage(stageCanvas, pad, pad);
 
-    if (includeDate) {
+    if (includeDate && frame !== 'none') {
       const dateStr = new Date().toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       });
-      ctx.fillStyle = '#1F3038';
-      ctx.font = 'bold 30px Caveat, cursive';
+      ctx.fillStyle = frame === 'midnight' ? '#faf6ed' : '#203e38';
+      ctx.font = `500 ${Math.min(30, Math.max(12, stageCanvas.width / 24))}px Figtree, sans-serif`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       ctx.fillText(

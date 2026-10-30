@@ -7,91 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <style>
-    :root {
-      --slate-glass: #1F3038;
-      --slate-glass-alpha: rgba(31, 48, 56, 0.86);
-      --fog-color: #D6E2E8;
-      --frost-white: #F4F8F9;
-      --meadow-teal: #7FC8C2;
-      --lamp-amber: #F2B544;
-      --font-hand: 'Caveat', 'Comic Sans MS', cursive;
-      --font-ui: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      width: 100%; height: 100%; overflow: hidden; background-color: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); user-select: none; -webkit-user-select: none;
-    }
-
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
-    .hidden { display: none !important; }
-
-    .app-shell { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
-    .stage-container { position: absolute; inset: 0; overflow: hidden; z-index: 1; touch-action: none; }
-    .stage-canvas, .ui-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
-    .ui-canvas { pointer-events: none; z-index: 2; }
-
-    .top-bar, .bottom-toolbar {
-      position: relative; z-index: 10; background: var(--slate-glass-alpha); backdrop-filter: blur(8px); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid rgba(244, 248, 249, 0.12);
-    }
-    .bottom-toolbar { border-bottom: none; border-top: 2px solid rgba(244, 248, 249, 0.12); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-
-    .brand-cluster, .scene-selector, .top-utilities, .tool-group, .capture-cluster { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-    .btn {
-      min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.25); background: rgba(31, 48, 56, 0.9); color: var(--frost-white); font-family: var(--font-ui); font-size: 0.92rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease, border-color 0.15s ease; text-decoration: none;
-    }
-    .btn:hover:not(:disabled) { border-color: var(--meadow-teal); background: rgba(127, 200, 194, 0.18); }
-    .btn:focus-visible, .scene-select:focus-visible { outline: 3px solid var(--lamp-amber); outline-offset: 2px; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-compact { min-height: 40px; padding: 0 10px; font-size: 0.85rem; }
-    .btn-primary, .tool-btn.active { background: var(--meadow-teal); color: var(--slate-glass); border-color: var(--frost-white); }
-    .btn-secondary { background: rgba(214, 226, 232, 0.16); }
-    .btn-amber { background: var(--lamp-amber); color: var(--slate-glass); border-color: #fff; font-weight: 700; }
-    .btn-capture { padding: 0 22px; font-size: 1rem; }
-
-    .scene-select { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.3); background: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); font-weight: 600; }
-
-    .status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,0.35); font-size: 0.85rem; font-weight: 600; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lamp-amber); }
-    .status-dot.ready { background: var(--meadow-teal); }
-    .status-dot.error { background: #E63946; }
-
-    .intro-overlay { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(31, 48, 56, 0.45); }
-    .picnic-card { max-width: 520px; width: 100%; background: var(--slate-glass-alpha); backdrop-filter: blur(12px); border: 2px solid rgba(244, 248, 249, 0.3); border-radius: 18px; padding: 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.45); }
-    .picnic-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(242, 181, 68, 0.2); color: var(--lamp-amber); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; }
-    .caveat-title { font-family: var(--font-hand); font-size: 2.8rem; color: var(--frost-white); line-height: 1.1; margin-bottom: 10px; }
-    .intro-lead { font-size: 0.98rem; line-height: 1.5; color: var(--fog-color); margin-bottom: 14px; }
-    .intro-steps { list-style: none; display: grid; gap: 8px; margin-bottom: 14px; font-size: 0.92rem; }
-    .intro-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-
-    .countdown-overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(31, 48, 56, 0.25); }
-    .countdown-number { font-family: var(--font-hand); font-size: 7rem; font-weight: 700; color: var(--lamp-amber); text-shadow: 0 4px 20px rgba(0,0,0,0.65); }
-
-    .toast-banner { position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 15; background: var(--slate-glass-alpha); border: 1.5px solid var(--meadow-teal); color: var(--frost-white); padding: 8px 18px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; pointer-events: none; text-align: center; }
-
-    .photo-tray { position: absolute; top: 66px; right: 12px; bottom: 74px; width: 250px; z-index: 12; background: var(--slate-glass-alpha); backdrop-filter: blur(10px); border: 1.5px solid rgba(244, 248, 249, 0.2); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-    .tray-title { font-family: var(--font-hand); font-size: 1.6rem; }
-    .tray-subtitle { font-size: 0.75rem; color: var(--fog-color); }
-    .tray-warning { background: rgba(242, 181, 68, 0.2); border: 1px solid var(--lamp-amber); color: var(--lamp-amber); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px; }
-    .photo-list { display: flex; flex-direction: column; gap: 12px; }
-    .photo-card { background: var(--frost-white); color: var(--slate-glass); padding: 8px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; }
-    .photo-card img { width: 100%; border-radius: 6px; display: block; }
-    .photo-card-actions { display: flex; gap: 6px; }
-    .photo-card-actions .btn { flex: 1; min-height: 36px; font-size: 0.8rem; }
-
-    @media (max-width: 768px) {
-      .photo-tray { top: auto; left: 12px; right: 12px; bottom: 84px; width: auto; height: 190px; }
-      .photo-list { flex-direction: row; overflow-x: auto; }
-      .photo-card { min-width: 150px; }
-    }
-    .stage-container { z-index: auto; }
-    .intro-overlay { position: fixed; z-index: 30; }
-    .picnic-card { max-height: calc(100dvh - 40px); overflow-y: auto; }
-  </style>
+  <meta name="description" content="An interactive garden photobooth. Draw in the mist, decorate your window, and save a print. Camera processing stays on your device.">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -111,28 +28,27 @@
 
       <section id="intro-overlay" class="intro-overlay" aria-labelledby="intro-title">
         <div class="intro-card picnic-card">
-          <div class="picnic-badge">🧺 Conservatory Picnic Booth</div>
-          <h1 id="intro-title" class="caveat-title">Picnic on the Glass</h1>
+          <div class="picnic-badge">THE GARDEN STUDIO</div>
+          <h1 id="intro-title" class="caveat-title">A little mist.<br>A little magic.</h1>
           <p class="intro-lead">
             Play with a misty greenhouse window overlooking a sunny picnic meadow.
             <strong>Camera frames are processed on this device</strong> and never uploaded.
           </p>
           <ul class="intro-steps">
             <li><strong>😮 Make an "O" mouth pose</strong> to breathe vapor/fog onto the glass.</li>
-            <li><strong>☝️ Point index finger</strong> to write; <strong>🖐️ Spread your palm toward the camera</strong> to wipe clean.</li>
+            <li><strong>☝️ Point index finger</strong> to write; <strong>✊ Make a fist</strong> to wipe with the Wipe tool.</li>
             <li><strong>📸 Press Photo</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake.</li>
-            <li><strong>Pond:</strong> point to guide the fish. Bring all five fingertips together like a beak, hold, then release to drop another portion. Other hands scare them away. Use Play and Drop fish food without a camera.</li>
           </ul>
-          <div class="intro-actions">
+          <label class="calibration-choice"><input id="chk-calibrate-mouth" type="checkbox"> Calibrate mouth gestures after starting</label><div class="intro-actions">
             <button id="btn-start-camera" type="button" class="btn btn-primary">Start Camera</button>
-            <button id="btn-try-demo" type="button" class="btn btn-secondary">Try Picnic Demo (No Camera)</button>
+            <button id="btn-try-demo" type="button" class="btn btn-secondary">Explore without a camera</button>
           </div>
         </div>
       </section>
     </main>
 
     <header class="top-bar" role="banner">
-      <div class="brand-cluster">
+      <div class="brand-cluster"><span class="wordmark">picnic<span>glass</span><small>AN INTERACTIVE PHOTO STUDIO</small></span>
         <span class="status-pill" id="camera-status-pill" title="Camera and on-device tracking status">
           <span class="status-dot" id="status-dot"></span>
           <span id="status-text">Demo Mode</span>
@@ -143,9 +59,10 @@
       <div class="scene-selector" role="group" aria-label="Picnic window scene">
         <label for="select-scene" class="control-label">Scene:</label>
         <select id="select-scene" class="scene-select">
-          <option value="meadow">🌻 Sunny Picnic Meadow</option>
-          <option value="aquarium">🐟 3D Koi &amp; Goldfish</option>
-          <option value="fireflies">✨ Twilight Fireflies</option>
+          <option value="meadow">Sunny meadow</option>
+          <option value="aquarium">Koi pond</option>
+          <option value="rain">Sunshower</option>
+          <option value="fireflies">Twilight fireflies</option>
         </select>
         <button id="btn-pause-scene" type="button" class="btn btn-compact" aria-pressed="false" title="Pause scene animation">
           Pause Motion
@@ -153,14 +70,14 @@
       </div>
 
       <div class="top-utilities">
-        <button id="btn-toggle-tray" type="button" class="btn btn-compact" aria-expanded="true">
+        <button id="btn-toggle-tray" type="button" class="btn btn-compact" aria-expanded="false" aria-controls="photo-tray">
           Photos (<span id="photo-count">0</span>/8)
         </button>
         <button id="btn-help" type="button" class="btn btn-compact" aria-label="Show controls help">?</button>
       </div>
     </header>
 
-    <aside id="photo-tray" class="photo-tray" aria-label="Captured picnic photos">
+    <aside id="photo-tray" class="photo-tray hidden" aria-label="Captured picnic photos">
       <div class="tray-header">
         <h2 class="tray-title">Picnic Prints</h2>
         <span class="tray-subtitle">Saved on user action only</span>
@@ -173,725 +90,40 @@
       </div>
     </aside>
 
+    <aside class="studio-panel" aria-label="Creative controls">
+      <p class="eyebrow">MAKE IT YOURS</p><h2>Your window,<br>your story.</h2>
+      <p class="panel-hint">Add a breath of mist, then drag to leave a little message.</p>
+      <button id="btn-fog-pulse" type="button" class="btn btn-primary">Hold to fog <kbd>F</kbd></button>
+      <label for="brush-size">Brush size</label><input id="brush-size" type="range" min="0.4" max="2.5" step="0.1" value="1">
+      <div id="lipstick-settings" class="hidden"><label for="select-stamp-mode">Mark</label><select id="select-stamp-mode" class="scene-select"><option value="draw">Freehand ink</option><option value="kiss">Kiss</option><option value="berry">Strawberry</option><option value="daisy">Daisy</option></select><div class="swatches" aria-label="Ink color"><button class="swatch active" data-color="#B64758" aria-label="Berry ink" aria-pressed="true"></button><button class="swatch" data-color="#E8B65D" aria-label="Honey ink" aria-pressed="false"></button><button class="swatch" data-color="#639B88" aria-label="Sage ink" aria-pressed="false"></button><input id="ink-color" type="color" value="#B64758" aria-label="Custom ink color"></div></div>
+      <label for="select-frame">Print finish</label><select id="select-frame" class="scene-select"><option value="classic">Classic paper</option><option value="botanical">Botanical green</option><option value="midnight">Midnight</option><option value="none">Borderless</option></select>
+      <label class="date-choice"><input id="include-date" type="checkbox" checked> Date on print</label>
+      <div class="edit-actions"><button id="btn-undo" type="button" class="btn btn-compact" disabled>Undo</button><button id="btn-clear-glass" type="button" class="btn btn-compact">Clear mist</button><button id="btn-clear-marks" type="button" class="btn btn-compact">Clear ink</button><button id="btn-reset-scene" type="button" class="btn btn-compact">Reset</button></div>
+      <p class="privacy-note">Camera frames stay on this device. Prints live in memory until you save or leave.</p>
+    </aside>
+    <section id="calibration-overlay" class="intro-overlay hidden" aria-label="Calibrate mouth gestures"><div class="picnic-card"><h2>Make an “O” with your mouth</h2><p>Hold for a moment to tune the fog gesture.</p><div class="calib-track"><div id="calib-progress"></div></div><button id="btn-skip-calib" class="btn" type="button">Skip</button></div></section>
     <footer class="bottom-toolbar" role="toolbar" aria-label="Glass drawing and capture controls">
-      <p id="gesture-status" role="status" style="flex-basis:100%;font-size:.78rem;color:var(--fog-color)">Show an open palm to erase · point to guide · beak to feed</p>
       <div class="tool-group" role="radiogroup" aria-label="Active glass tool">
         <button type="button" class="btn tool-btn active" data-tool="write" role="radio" aria-checked="true">
-          ☝️ Write
+          Write in mist
         </button>
         <button type="button" class="btn tool-btn" data-tool="wipe" role="radio" aria-checked="false">
-          🖐️ Palm Wipe
+          Wipe
         </button>
+        <button type="button" class="btn tool-btn" data-tool="lipstick" role="radio" aria-checked="false">Ink &amp; stamps</button>
         <button type="button" class="btn tool-btn" data-tool="play" role="radio" aria-checked="false">
-          🦋 Play
+          Play
         </button>
       </div>
 
-      <div class="capture-cluster"><button id="btn-feed-fish" type="button" class="btn" title="Drop a portion near the center of the pond">Drop fish food</button>
-        <button id="btn-photo" type="button" class="btn btn-amber btn-capture" title="Start 3-second photo countdown (Space)">
-          📸 Photo
+      <div class="capture-cluster"><label for="select-timer">Timer</label><select id="select-timer" class="scene-select"><option value="0">Off</option><option value="3" selected>3 seconds</option><option value="5">5 seconds</option><option value="10">10 seconds</option></select>
+        <button id="btn-photo" type="button" class="btn btn-amber btn-capture" title="Capture using the selected timer (Space)">
+          Take a photo
         </button>
       </div>
     </footer>
   </div>
 
-  <script type="module">
-    import { evaluateHandPose, GestureGate } from './js/input/hand-gestures.js';
-    import { PondSimulation } from './js/scenes/pond.js';
-    import { FishRenderer } from './js/scenes/fish-renderer.js';
-    function computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight) {
-      if (!videoWidth || !videoHeight || !stageWidth || !stageHeight) return { scale: 1, offsetX: 0, offsetY: 0 };
-      const videoAspect = videoWidth / videoHeight;
-      const stageAspect = stageWidth / stageHeight;
-      let scale, offsetX = 0, offsetY = 0;
-      if (stageAspect > videoAspect) {
-        scale = stageWidth / videoWidth;
-        offsetY = (stageHeight - videoHeight * scale) * 0.5;
-      } else {
-        scale = stageHeight / videoHeight;
-        offsetX = (stageWidth - videoWidth * scale) * 0.5;
-      }
-      return { scale, offsetX, offsetY };
-    }
-
-    function mapNormalizedToStage(normX, normY, videoWidth, videoHeight, stageWidth, stageHeight, mirror = true) {
-      const { scale, offsetX, offsetY } = computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight);
-      const effectiveNormX = mirror ? (1 - normX) : normX;
-      return {
-        x: Math.max(0, Math.min(stageWidth, effectiveNormX * videoWidth * scale + offsetX)),
-        y: Math.max(0, Math.min(stageHeight, normY * videoHeight * scale + offsetY))
-      };
-    }
-
-    class PointSmoother {
-      constructor(alpha = 0.45, maxGapMs = 250) {
-        this.alpha = alpha; this.maxGapMs = maxGapMs; this.reset();
-      }
-      update(x, y, timestampMs) {
-        if (this.lastX === null || timestampMs - this.lastTimestamp > this.maxGapMs || Math.hypot(x - this.lastX, y - this.lastY) > 260) {
-          this.lastX = x; this.lastY = y;
-        } else {
-          this.lastX += this.alpha * (x - this.lastX);
-          this.lastY += this.alpha * (y - this.lastY);
-        }
-        this.lastTimestamp = timestampMs;
-        return { x: this.lastX, y: this.lastY };
-      }
-      reset() { this.lastX = null; this.lastY = null; this.lastTimestamp = 0; }
-    }
-
-    function evaluateMouthPose(faceLandmarks, blendshapes = null) {
-      if (!faceLandmarks || faceLandmarks.length < 300) return { score: 0, mouthCenter: null };
-      const upperLip = faceLandmarks[13];
-      const lowerLip = faceLandmarks[14];
-      const leftCorner = faceLandmarks[78];
-      const rightCorner = faceLandmarks[308];
-
-      const mouthWidth = Math.hypot(rightCorner.x - leftCorner.x, rightCorner.y - leftCorner.y);
-      const mouthHeight = Math.hypot(lowerLip.x - upperLip.x, lowerLip.y - upperLip.y);
-      if (mouthWidth < 1e-4) return { score: 0, mouthCenter: null };
-
-      const aspect = mouthHeight / mouthWidth;
-      const geometryScore = aspect >= 0.26 && aspect <= 0.95 ? Math.min(1, (aspect - 0.22) / 0.48) : 0;
-
-      let blendScore = geometryScore;
-      if (blendshapes && Array.isArray(blendshapes)) {
-        const getCat = (name) => blendshapes.find((b) => b.categoryName === name)?.score || 0;
-        const funnel = getCat('mouthFunnel');
-        const pucker = getCat('mouthPucker');
-        const jawOpen = getCat('jawOpen');
-        const smile = (getCat('mouthSmileLeft') + getCat('mouthSmileRight')) * 0.5;
-        const roundness = Math.max(funnel, pucker * 0.85, Math.min(jawOpen, 0.7) * 0.75) - smile * 0.6;
-        blendScore = Math.max(0, Math.min(1, geometryScore * 0.55 + roundness * 0.65));
-      }
-
-      return {
-        score: blendScore,
-        mouthCenter: { x: (upperLip.x + lowerLip.x) * 0.5, y: (upperLip.y + lowerLip.y) * 0.5 }
-      };
-    }
-
-    const MEDIAPIPE_VISION_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
-    const MEDIAPIPE_WASM_ROOT = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
-    const FACE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-    const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-
-    class VisionTracker {
-      constructor() {
-        this.faceLandmarker = null; this.handLandmarker = null; this.isReady = false; this.inFlight = false; this.lastVideoTime = -1;
-      }
-      async init() {
-        try {
-          const visionModule = await import(MEDIAPIPE_VISION_CDN);
-          const { FilesetResolver, FaceLandmarker, HandLandmarker } = visionModule;
-          const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_ROOT);
-
-          this.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-            baseOptions: { modelAssetPath: FACE_MODEL_URL, delegate: 'GPU' }, runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true
-          });
-          this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
-            baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: 'GPU' }, runningMode: 'VIDEO', numHands: 1
-          });
-          this.isReady = true; return { ready: true };
-        } catch (err) {
-          try {
-            const visionModule = await import(MEDIAPIPE_VISION_CDN);
-            const { FilesetResolver, FaceLandmarker, HandLandmarker } = visionModule;
-            const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_ROOT);
-            this.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-              baseOptions: { modelAssetPath: FACE_MODEL_URL, delegate: 'CPU' }, runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true
-            });
-            this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
-              baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: 'CPU' }, runningMode: 'VIDEO', numHands: 1
-            });
-            this.isReady = true; return { ready: true };
-          } catch (cpuErr) {
-            this.isReady = false; return { ready: false, error: cpuErr };
-          }
-        }
-      }
-      detect(videoEl, timestampMs) {
-        if (!this.isReady || this.inFlight || !videoEl || videoEl.readyState < 2) return null;
-        if (videoEl.currentTime === this.lastVideoTime) return null;
-        this.inFlight = true; this.lastVideoTime = videoEl.currentTime;
-        let faceLandmarks = null, blendshapes = null, handLandmarks = null;
-        try {
-          if (this.faceLandmarker) {
-            const fRes = this.faceLandmarker.detectForVideo(videoEl, timestampMs);
-            if (fRes?.faceLandmarks?.length > 0) { faceLandmarks = fRes.faceLandmarks[0]; blendshapes = fRes.faceBlendshapes?.[0]?.categories || null; }
-          }
-          if (this.handLandmarker) {
-            const hRes = this.handLandmarker.detectForVideo(videoEl, timestampMs);
-            if (hRes?.landmarks?.length > 0) handLandmarks = hRes.landmarks[0];
-          }
-        } catch (e) { console.warn('Detection skipped:', e); } finally { this.inFlight = false; }
-        return { faceLandmarks, blendshapes, handLandmarks };
-      }
-    }
-
-    class FogEngine {
-      constructor(gridWidth = 320, gridHeight = 180) {
-        this.gridWidth = gridWidth; this.gridHeight = gridHeight;
-        this.density = new Float32Array(gridWidth * gridHeight);
-        this.noise = new Uint8Array(gridWidth * gridHeight);
-        this.evaporationPerSec = 1 / 120;
-        this.maskCanvas = document.createElement('canvas');
-        this.maskCanvas.width = gridWidth; this.maskCanvas.height = gridHeight;
-        this.maskCtx = this.maskCanvas.getContext('2d');
-        this.imageData = this.maskCtx.createImageData(gridWidth, gridHeight);
-        for (let i = 0; i < this.noise.length; i++) this.noise[i] = 215 + ((i * 73) % 35);
-      }
-      fillInitialIntroFog() {
-        this.density.fill(0.86);
-        const temp = document.createElement('canvas'); temp.width = this.gridWidth; temp.height = this.gridHeight;
-        const tctx = temp.getContext('2d');
-        tctx.fillStyle = '#000'; tctx.font = `bold ${Math.round(this.gridHeight * 0.22)}px Caveat, cursive`;
-        tctx.textAlign = 'center'; tctx.textBaseline = 'middle'; tctx.fillText('Picnic Glass', this.gridWidth * 0.5, this.gridHeight * 0.25);
-        const data = tctx.getImageData(0, 0, this.gridWidth, this.gridHeight).data;
-        for (let i = 0; i < this.density.length; i++) {
-          const alpha = data[i * 4 + 3] / 255;
-          if (alpha > 0.1) this.density[i] = Math.max(0.05, this.density[i] * (1 - alpha * 0.92));
-        }
-      }
-      clearAll() { this.density.fill(0); }
-      addBreath(normX, normY, dtSec, intensity = 1.15) {
-        const cx = normX * this.gridWidth, cy = normY * this.gridHeight;
-        const radius = Math.max(this.gridWidth, this.gridHeight) * 0.22, rSq = radius * radius;
-        const ambientGain = 0.08 * dtSec * intensity;
-        for (let y = 0; y < this.gridHeight; y++) {
-          const dy = y - cy, rowOffset = y * this.gridWidth;
-          for (let x = 0; x < this.gridWidth; x++) {
-            const dx = x - cx, dSq = dx * dx + dy * dy;
-            let add = ambientGain;
-            if (dSq < rSq) {
-              const falloff = 1 - Math.sqrt(dSq) / radius;
-              add += falloff * falloff * 0.95 * dtSec * intensity;
-            }
-            this.density[rowOffset + x] = Math.min(1, this.density[rowOffset + x] + add);
-          }
-        }
-      }
-      clearSegment(normX0, normY0, normX1, normY1, normRadius = 0.035) {
-        const x0 = normX0 * this.gridWidth, y0 = normY0 * this.gridHeight;
-        const x1 = normX1 * this.gridWidth, y1 = normY1 * this.gridHeight;
-        const r = Math.max(3, normRadius * this.gridWidth);
-        const dist = Math.hypot(x1 - x0, y1 - y0);
-        const steps = Math.max(1, Math.ceil(dist / (r * 0.35)));
-        for (let s = 0; s <= steps; s++) {
-          this.stampClearCircle(x0 + (x1 - x0) * (s / steps), y0 + (y1 - y0) * (s / steps), r);
-        }
-      }
-      stampClearCircle(cx, cy, r) {
-        const minX = Math.max(0, Math.floor(cx - r)), maxX = Math.min(this.gridWidth - 1, Math.ceil(cx + r));
-        const minY = Math.max(0, Math.floor(cy - r)), maxY = Math.min(this.gridHeight - 1, Math.ceil(cy + r));
-        const rSq = r * r;
-        for (let y = minY; y <= maxY; y++) {
-          const dy = y - cy, row = y * this.gridWidth;
-          for (let x = minX; x <= maxX; x++) {
-            const dx = x - cx, dSq = dx * dx + dy * dy;
-            if (dSq <= rSq) {
-              const distRatio = Math.sqrt(dSq) / r;
-              const keep = distRatio > 0.7 ? (distRatio - 0.7) / 0.3 : 0;
-              this.density[row + x] *= keep;
-            }
-          }
-        }
-      }
-      step(dtSec) {
-        const clampedDt = Math.min(0.1, Math.max(0, dtSec));
-        if (clampedDt === 0) return;
-        const evap = this.evaporationPerSec * clampedDt;
-        for (let i = 0; i < this.density.length; i++) {
-          if (this.density[i] > 0) this.density[i] = Math.max(0, this.density[i] - evap);
-        }
-      }
-      renderMaskCanvas() {
-        const data = this.imageData.data;
-        for (let i = 0; i < this.density.length; i++) {
-          const d = this.density[i], n = this.noise[i], p = i * 4;
-          data[p] = n; data[p + 1] = Math.min(255, n + 10); data[p + 2] = Math.min(255, n + 16);
-          data[p + 3] = Math.round(Math.min(1, d) * 232);
-        }
-        this.maskCtx.putImageData(this.imageData, 0, 0);
-        return this.maskCanvas;
-      }
-    }
-
-    class SceneManager {
-      constructor(width = 1280, height = 720) {
-        this.width = width; this.height = height;
-        this.currentScene = 'meadow';
-        this.paused = false;
-        this.fireflies = Array.from({ length: 22 }, () => ({
-          x: Math.random() * width, y: Math.random() * height, vx: (Math.random() - 0.5) * 45, vy: (Math.random() - 0.5) * 45, phase: Math.random() * Math.PI * 2
-        }));
-        this.seeds = Array.from({ length: 16 }, () => ({
-          x: Math.random() * width, y: Math.random() * height, vx: 18 + Math.random() * 20, vy: -10 - Math.random() * 15
-        }));
-
-        this.pond = new PondSimulation();
-        this.fishRenderer = new FishRenderer(window.THREE, width, height, this.pond.fish);
-      }
-      resize(width, height) {
-        this.width = width; this.height = height;
-        this.fishRenderer.resize(width, height);
-      }
-      setScene(sceneId) { this.currentScene = sceneId; }
-      renderDemoBackground(ctx) {
-        const w = this.width, h = this.height;
-        const grad = ctx.createLinearGradient(0, 0, 0, h);
-        if (this.currentScene === 'fireflies') {
-          grad.addColorStop(0, '#16262E'); grad.addColorStop(1, '#28433A');
-        } else if (this.currentScene === 'aquarium') {
-          grad.addColorStop(0, '#24585f'); grad.addColorStop(.5, '#4d9995'); grad.addColorStop(1, '#9ac3a7');
-        } else {
-          grad.addColorStop(0, '#88D4CD'); grad.addColorStop(0.65, '#CDEAC0'); grad.addColorStop(1, '#7FB069');
-        }
-        ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
-      }
-      renderScene(ctx, dtSec, playTarget = null) {
-        const dt = this.paused ? 0 : Math.min(0.1, Math.max(0, dtSec));
-        const w = this.width, h = this.height;
-
-        if (this.currentScene === 'meadow') {
-          ctx.fillStyle = 'rgba(244, 248, 249, 0.75)';
-          for (const s of this.seeds) {
-            s.x = (s.x + s.vx * dt + w) % w; s.y = (s.y + s.vy * dt + h) % h;
-            ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, Math.PI * 2); ctx.fill();
-          }
-        } else if (this.currentScene === 'aquarium') {
-          this.pond.step(dt, playTarget);
-          this.fishRenderer.render(ctx, this.pond);
-        } else if (this.currentScene === 'fireflies') {
-          for (const f of this.fireflies) {
-            f.x = (f.x + f.vx * dt + w) % w; f.y = (f.y + f.vy * dt + h) % h;
-            f.phase += dt * 4;
-            const glow = 0.5 + 0.5 * Math.sin(f.phase);
-            const rad = ctx.createRadialGradient(f.x, f.y, 1, f.x, f.y, 18);
-            rad.addColorStop(0, `rgba(242, 181, 68, ${glow})`); rad.addColorStop(1, 'rgba(242, 181, 68, 0)');
-            ctx.fillStyle = rad; ctx.beginPath(); ctx.arc(f.x, f.y, 18, 0, Math.PI * 2); ctx.fill();
-          }
-        }
-      }
-    }
-
-    class PhotoTrayManager {
-      constructor(maxPhotos = 8) { this.maxPhotos = maxPhotos; this.photos = []; }
-      isFull() { return this.photos.length >= this.maxPhotos; }
-      async captureFramedBlob(stageCanvas, includeDate = true) {
-        const pad = 28, bottomPad = 78;
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = stageCanvas.width + pad * 2;
-        exportCanvas.height = stageCanvas.height + pad + bottomPad;
-        const ctx = exportCanvas.getContext('2d');
-        ctx.fillStyle = '#F4F8F9'; ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-        ctx.fillStyle = '#7FC8C2'; ctx.fillRect(pad, exportCanvas.height - bottomPad + 6, stageCanvas.width, 3);
-        ctx.drawImage(stageCanvas, pad, pad);
-        if (includeDate) {
-          const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-          ctx.fillStyle = '#1F3038'; ctx.font = 'bold 30px Caveat, cursive'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-          ctx.fillText(`Picnic Glass • ${dateStr}`, exportCanvas.width - pad - 6, exportCanvas.height - bottomPad * 0.45);
-        }
-        return new Promise((resolve) => {
-          exportCanvas.toBlob((blob) => {
-            const url = URL.createObjectURL(blob);
-            const item = { id: `picnic-${Date.now()}`, url, blob, createdAt: new Date() };
-            if (this.photos.length >= this.maxPhotos) { const evicted = this.photos.shift(); URL.revokeObjectURL(evicted.url); }
-            this.photos.push(item);
-            resolve({ item });
-          }, 'image/png');
-        });
-      }
-      removePhoto(id) {
-        const idx = this.photos.findIndex((p) => p.id === id);
-        if (idx !== -1) { const [removed] = this.photos.splice(idx, 1); URL.revokeObjectURL(removed.url); }
-      }
-    }
-
-    class PicnicPhotoboothApp {
-      constructor() {
-        this.videoEl = document.getElementById('camera-video');
-        this.stageCanvas = document.getElementById('stage-canvas');
-        this.stageCtx = this.stageCanvas.getContext('2d');
-        this.uiCanvas = document.getElementById('ui-canvas');
-        this.uiCtx = this.uiCanvas.getContext('2d');
-
-        this.sharpBuffer = document.createElement('canvas');
-        this.sharpCtx = this.sharpBuffer.getContext('2d');
-        this.fogBuffer = document.createElement('canvas');
-        this.fogCtx = this.fogBuffer.getContext('2d');
-
-        this.fogEngine = new FogEngine(320, 180);
-        this.sceneManager = new SceneManager(1280, 720);
-        this.trayManager = new PhotoTrayManager(8);
-        this.tracker = new VisionTracker();
-        this.handSmoother = new PointSmoother(0.45, 220);
-
-        this.gestureGate = new GestureGate();
-        this.pondHand = null;
-        this.lastHandSeen = -Infinity;
-        this.cameraActive = false;
-        this.activeTool = 'write';
-        this.pointerDown = false;
-        this.pointerPos = null;
-        this.lastStrokePos = null;
-        this.lastHandStrokePos = null;
-
-        this.countdownActive = false;
-        this.countdownTimer = null;
-        this.lockedDimensions = null;
-        this.lastFrameTime = performance.now();
-
-        this.initDOM();
-        this.handleResize();
-        this.fogEngine.fillInitialIntroFog();
-        window.addEventListener('resize', () => this.handleResize());
-        requestAnimationFrame((t) => this.loop(t));
-      }
-
-      initDOM() {
-        document.getElementById('btn-start-camera').addEventListener('click', () => this.startCamera());
-        document.getElementById('btn-try-demo').addEventListener('click', () => this.startDemoMode());
-        document.getElementById('btn-retry-camera').addEventListener('click', () => this.startCamera());
-
-        document.getElementById('select-scene').addEventListener('change', (e) => {
-          this.sceneManager.setScene(e.target.value);
-          this.showToast('Scene changed — glass fog preserved.');
-        });
-
-        const btnPause = document.getElementById('btn-pause-scene');
-        btnPause.addEventListener('click', () => {
-          this.sceneManager.paused = !this.sceneManager.paused;
-          btnPause.setAttribute('aria-pressed', String(this.sceneManager.paused));
-          btnPause.textContent = this.sceneManager.paused ? 'Resume Motion' : 'Pause Motion';
-        });
-
-        document.getElementById('btn-toggle-tray').addEventListener('click', (e) => {
-          const tray = document.getElementById('photo-tray');
-          const hidden = tray.classList.toggle('hidden');
-          e.currentTarget.setAttribute('aria-expanded', String(!hidden));
-        });
-        document.getElementById('btn-help').addEventListener('click', () => {
-          document.getElementById('intro-overlay').classList.remove('hidden');
-        });
-
-        document.querySelectorAll('.tool-btn').forEach((btn) => {
-          btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
-        });
-
-        document.getElementById('btn-feed-fish').addEventListener('click', () => {
-          if (this.countdownActive || this.sceneManager.paused) return;
-          if (this.sceneManager.currentScene !== 'aquarium') {
-            document.getElementById('select-scene').value = 'aquarium';
-            this.sceneManager.setScene('aquarium');
-          }
-          const now = performance.now();
-          if (now - (this.lastPointerFeed ?? -Infinity) < 1200) return;
-          this.lastPointerFeed = now;
-          const p = this.pointerPos || { x: this.stageCanvas.width * .5, y: this.stageCanvas.height * .55 };
-          this.sceneManager.pond.dropFood(p.x / this.stageCanvas.width, p.y / this.stageCanvas.height);
-          this.showToast('Food dropped. The fish will gather here.');
-        });
-        window.addEventListener('pagehide', event => {
-          this.videoEl.srcObject?.getTracks().forEach(track => track.stop());
-          this.cameraActive = false; this.pondHand = null;
-          if (!event.persisted) this.sceneManager.fishRenderer.dispose();
-        });
-        document.getElementById('btn-photo').addEventListener('click', () => this.startCountdown());
-        document.getElementById('btn-cancel-countdown').addEventListener('click', () => this.cancelCountdown('Countdown cancelled.'));
-
-        this.stageCanvas.addEventListener('pointerdown', (e) => this.onPointerDown(e));
-        this.stageCanvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
-        this.stageCanvas.addEventListener('pointerleave', () => { this.pointerPos = null; });
-        this.stageCanvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
-        this.stageCanvas.addEventListener('pointercancel', (e) => this.onPointerUp(e));
-
-        window.addEventListener('keydown', (e) => {
-          const tag = document.activeElement?.tagName;
-          if (e.key === 'Escape' && this.countdownActive) {
-            e.preventDefault(); this.cancelCountdown('Countdown cancelled.'); return;
-          }
-          if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(tag) || document.activeElement?.isContentEditable) return;
-          if (e.code === 'Space' && !this.countdownActive) {
-            e.preventDefault(); this.startCountdown();
-          }
-        });
-      }
-
-      selectTool(toolName) {
-        this.activeTool = toolName;
-        this.lastStrokePos = null; this.lastHandStrokePos = null;
-        document.querySelectorAll('.tool-btn').forEach((btn) => {
-          const active = btn.dataset.tool === toolName;
-          btn.classList.toggle('active', active);
-          btn.setAttribute('aria-checked', String(active));
-        });
-      }
-
-      async startCamera() {
-        document.getElementById('intro-overlay').classList.add('hidden');
-        this.updateStatus('Starting camera...', 'warn');
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-          this.videoEl.srcObject = stream; await this.videoEl.play();
-          this.cameraActive = true;
-          document.getElementById('btn-retry-camera').classList.add('hidden');
-          const res = await this.tracker.init();
-          if (res.ready) {
-            this.updateStatus('Camera & Tracking Ready', 'ready');
-            this.showToast('Make an "O" mouth to fog, point index to write, or hold an open palm forward to wipe!');
-          } else {
-            this.updateStatus('Camera Ready (Pointer Mode)', 'warn');
-          }
-        } catch {
-          this.cameraActive = false;
-          this.updateStatus('Camera unavailable', 'error');
-          document.getElementById('btn-retry-camera').classList.remove('hidden');
-        }
-      }
-
-      startDemoMode() {
-        this.pondHand = null; this.lastHandStrokePos = null; this.lastHandMode = null;
-        this.gestureGate.reset();
-        if (this.videoEl.srcObject) { this.videoEl.srcObject.getTracks().forEach((t) => t.stop()); this.videoEl.srcObject = null; }
-        this.cameraActive = false;
-        document.getElementById('intro-overlay').classList.add('hidden');
-        this.updateStatus('Picnic Demo Mode', 'ready');
-      }
-
-      handleResize() {
-        const stage = this.stageCanvas.parentElement;
-        stage.style.top = document.querySelector('.top-bar').offsetHeight + 'px';
-        stage.style.bottom = document.querySelector('.bottom-toolbar').offsetHeight + 'px';
-        const rect = this.stageCanvas.parentElement.getBoundingClientRect();
-        const w = Math.max(1, Math.round(rect.width)), h = Math.max(1, Math.round(rect.height));
-        this.stageCanvas.width = w; this.stageCanvas.height = h;
-        this.uiCanvas.width = w; this.uiCanvas.height = h;
-        this.sharpBuffer.width = w; this.sharpBuffer.height = h;
-        this.fogBuffer.width = w; this.fogBuffer.height = h;
-        this.sceneManager.resize(w, h);
-      }
-
-      onPointerDown(e) {
-        if (this.countdownActive) return;
-        this.stageCanvas.setPointerCapture?.(e.pointerId);
-        this.pointerDown = true;
-        const pos = this.getPointerPos(e);
-        this.pointerPos = pos; this.lastStrokePos = pos;
-        this.applyToolSegment(pos, pos);
-      }
-
-      onPointerMove(e) {
-        const pos = this.getPointerPos(e);
-        this.pointerPos = pos;
-        if (!this.pointerDown || this.countdownActive) return;
-        if (this.lastStrokePos) this.applyToolSegment(this.lastStrokePos, pos);
-        this.lastStrokePos = pos;
-      }
-
-      onPointerUp(e) {
-        if (this.stageCanvas.hasPointerCapture?.(e.pointerId)) this.stageCanvas.releasePointerCapture(e.pointerId);
-        this.pointerDown = false; this.lastStrokePos = null;
-      }
-
-      getPointerPos(e) {
-        const rect = this.stageCanvas.getBoundingClientRect();
-        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      }
-
-      applyToolSegment(p0, p1, scaleMultiplier = 1) {
-        if (this.activeTool === 'play' || this.countdownActive) return;
-        const w = this.stageCanvas.width, h = this.stageCanvas.height;
-        const nx0 = p0.x / w, ny0 = p0.y / h, nx1 = p1.x / w, ny1 = p1.y / h;
-        if (this.activeTool === 'write') {
-          this.fogEngine.clearSegment(nx0, ny0, nx1, ny1, 0.032 * scaleMultiplier);
-        } else if (this.activeTool === 'wipe') {
-          this.fogEngine.clearSegment(nx0, ny0, nx1, ny1, 0.075 * scaleMultiplier);
-        }
-      }
-
-      startCountdown() {
-        if (this.countdownActive) return;
-        this.countdownActive = true;
-        const overlay = document.getElementById('countdown-overlay');
-        const numEl = document.getElementById('countdown-number');
-        overlay.classList.remove('hidden');
-        let remaining = 3; numEl.textContent = String(remaining);
-        this.countdownTimer = setInterval(() => {
-          remaining -= 1;
-          if (remaining > 0) {
-            numEl.textContent = String(remaining);
-          } else {
-            clearInterval(this.countdownTimer);
-            overlay.classList.add('hidden');
-            this.completePhotoCapture();
-          }
-        }, 1000);
-      }
-
-      cancelCountdown(reason) {
-        if (!this.countdownActive) return;
-        if (this.countdownTimer) clearInterval(this.countdownTimer);
-        this.countdownActive = false;
-        document.getElementById('countdown-overlay').classList.add('hidden');
-        this.showToast(reason);
-      }
-
-      async completePhotoCapture() {
-        try {
-          await this.trayManager.captureFramedBlob(this.stageCanvas, true);
-          this.renderPhotoTray();
-          this.showToast('📸 Picnic print added to tray!');
-        } catch (err) {
-          console.error(err);
-        } finally {
-          this.countdownActive = false;
-        }
-      }
-
-      renderPhotoTray() {
-        const list = document.getElementById('photo-list');
-        document.getElementById('photo-count').textContent = String(this.trayManager.photos.length);
-        document.getElementById('tray-warning').classList.toggle('hidden', !this.trayManager.isFull());
-        list.innerHTML = '';
-        if (this.trayManager.photos.length === 0) {
-          list.innerHTML = '<p class="empty-tray-msg">No photos yet. Fog the glass and press <strong>Photo</strong>!</p>';
-          return;
-        }
-        for (const photo of [...this.trayManager.photos].reverse()) {
-          const card = document.createElement('div'); card.className = 'photo-card';
-          const img = document.createElement('img'); img.src = photo.url; img.alt = 'Captured print';
-          const actions = document.createElement('div'); actions.className = 'photo-card-actions';
-          const saveBtn = document.createElement('a'); saveBtn.className = 'btn btn-primary'; saveBtn.href = photo.url; saveBtn.download = `${photo.id}.png`; saveBtn.textContent = 'Save';
-          const delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.className = 'btn btn-secondary'; delBtn.textContent = 'Delete';
-          delBtn.addEventListener('click', () => { this.trayManager.removePhoto(photo.id); this.renderPhotoTray(); });
-          actions.append(saveBtn, delBtn); card.append(img, actions); list.appendChild(card);
-        }
-      }
-
-      updateStatus(text, state = 'ready') {
-        document.getElementById('status-text').textContent = text;
-        const dot = document.getElementById('status-dot'); dot.className = 'status-dot';
-        if (state === 'ready') dot.classList.add('ready');
-        if (state === 'error') dot.classList.add('error');
-      }
-
-      showToast(msg) {
-        const toast = document.getElementById('toast-banner');
-        toast.textContent = msg; toast.classList.remove('hidden');
-        clearTimeout(this.toastTimeout);
-        this.toastTimeout = setTimeout(() => toast.classList.add('hidden'), 3400);
-      }
-
-      loop(nowMs) {
-        const dtSec = Math.min(0.1, Math.max(0, (nowMs - this.lastFrameTime) / 1000));
-        this.lastFrameTime = nowMs;
-        const w = this.stageCanvas.width, h = this.stageCanvas.height;
-
-        if (!this.countdownActive) {
-          this.processTracking(nowMs, dtSec);
-          this.fogEngine.step(dtSec);
-        }
-        this.renderComposite(dtSec, w, h);
-        requestAnimationFrame((t) => this.loop(t));
-      }
-
-      processTracking(nowMs, dtSec) {
-        this.uiCtx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
-        if (!this.cameraActive || !this.tracker.isReady) return;
-        if (nowMs - this.lastHandSeen > 180) {
-          this.pondHand = null; this.lastHandStrokePos = null; this.lastHandMode = null;
-          this.gestureGate.update('none', nowMs);
-          document.getElementById('gesture-status').textContent = 'Show an open palm to erase · point to guide · beak to feed';
-        }
-
-        const detection = this.tracker.detect(this.videoEl, nowMs);
-        if (!detection) return;
-
-        const vw = this.videoEl.videoWidth || 1280, vh = this.videoEl.videoHeight || 720;
-        const sw = this.stageCanvas.width, sh = this.stageCanvas.height;
-
-        if (detection.faceLandmarks) {
-          const mouthEval = evaluateMouthPose(detection.faceLandmarks, detection.blendshapes);
-          if (mouthEval.mouthCenter && mouthEval.score > 0.48) {
-            const mStage = mapNormalizedToStage(mouthEval.mouthCenter.x, mouthEval.mouthCenter.y, vw, vh, sw, sh, true);
-            this.fogEngine.addBreath(mStage.x / sw, mStage.y / sh, dtSec, 1.25);
-          }
-        }
-
-        if (!detection.handLandmarks) {
-          this.gestureGate.update('none', nowMs);
-          this.pondHand = null; this.lastHandStrokePos = null; return;
-        }
-        this.lastHandSeen = nowMs;
-        const hand = evaluateHandPose(detection.handLandmarks);
-        const state = this.gestureGate.update(hand.pose, nowMs);
-        const center = state.pose === 'point' ? hand.indexTip : state.pose === 'beak' ? hand.beakCenter : hand.palmCenter;
-        if (!center) { this.pondHand = null; this.lastHandStrokePos = null; return; }
-        const pos = mapNormalizedToStage(center.x, center.y, vw, vh, sw, sh, true);
-        this.pondHand = { x: pos.x / sw, y: pos.y / sh, pose: state.pose === 'none' ? 'neutral' : state.pose };
-        document.getElementById('gesture-status').textContent = state.pose === 'palm' ? 'Open palm · erasing' : state.pose === 'beak' ? 'Beak · feeding' : state.pose === 'point' ? 'Point · fish following' : 'Hand detected · hold a gesture';
-        if (state.feed && this.sceneManager.currentScene === 'aquarium' && !this.sceneManager.paused) {
-          this.sceneManager.pond.dropFood(pos.x / sw, pos.y / sh);
-          this.showToast('Food dropped. Release the beak gesture to feed again.');
-        }
-        const mode = state.pose === 'palm' ? 'erase' : state.pose === 'point' && this.activeTool === 'write' ? 'write' : null;
-        if (!mode || this.pointerDown) { this.lastHandStrokePos = null; this.lastHandMode = null; return; }
-        if (this.lastHandMode !== mode) { this.lastHandStrokePos = null; this.handSmoother.reset(); }
-        this.lastHandMode = mode;
-        const tip = this.handSmoother.update(pos.x, pos.y, nowMs);
-        const prev = this.lastHandStrokePos || tip;
-        if (mode === 'erase') {
-          this.fogEngine.clearSegment(prev.x / sw, prev.y / sh, tip.x / sw, tip.y / sh, .085);
-        } else this.applyToolSegment(prev, tip, Math.max(.75, Math.min(1.5, hand.handScale * 6)));
-        this.lastHandStrokePos = tip;
-      }
-
-      renderComposite(dtSec, w, h) {
-        const sCtx = this.sharpCtx;
-        sCtx.clearRect(0, 0, w, h);
-
-        if (this.cameraActive && this.videoEl.readyState >= 2) {
-          const vw = this.videoEl.videoWidth, vh = this.videoEl.videoHeight;
-          const { scale, offsetX, offsetY } = computeCoverTransform(vw, vh, w, h);
-          sCtx.save();
-          sCtx.translate(w, 0); sCtx.scale(-1, 1);
-          sCtx.drawImage(this.videoEl, offsetX, offsetY, vw * scale, vh * scale);
-          sCtx.restore();
-        } else {
-          this.sceneManager.renderDemoBackground(sCtx);
-        }
-
-        const pointerTarget = this.activeTool === 'play' && this.pointerPos ? { x: this.pointerPos.x / w, y: this.pointerPos.y / h, pose: 'point' } : null;
-        const playTarget = this.pondHand || pointerTarget;
-        this.sceneManager.renderScene(sCtx, this.countdownActive ? 0 : dtSec, playTarget);
-
-        this.stageCtx.clearRect(0, 0, w, h);
-        this.stageCtx.drawImage(this.sharpBuffer, 0, 0);
-
-        const fCtx = this.fogCtx;
-        fCtx.clearRect(0, 0, w, h);
-        fCtx.save();
-        fCtx.filter = 'blur(12px) brightness(1.06)';
-        fCtx.drawImage(this.sharpBuffer, 0, 0);
-        fCtx.restore();
-
-        fCtx.fillStyle = 'rgba(214, 226, 232, 0.42)';
-        fCtx.fillRect(0, 0, w, h);
-
-        const maskCanvas = this.fogEngine.renderMaskCanvas();
-        fCtx.save();
-        fCtx.globalCompositeOperation = 'destination-in';
-        fCtx.drawImage(maskCanvas, 0, 0, w, h);
-        fCtx.restore();
-
-        this.stageCtx.drawImage(this.fogBuffer, 0, 0);
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      window.picnicApp = new PicnicPhotoboothApp();
-    });
-  </script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

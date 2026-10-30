@@ -1,21 +1,24 @@
 # Picnic Glass — Fog Photobooth
 
-For the updated open-palm eraser, beak feeding gesture and 3D koi/goldfish behavior, see [Pond controls](POND-CONTROLS.md).
+A zero-build browser photobooth with on-device face/hand tracking and mouse/touch fallback. Draw through condensation, use colored ink and stamps, switch between four illustrated garden scenes, and capture PNG prints.
 
-A browser-based interactive glass photobooth with a cozy picnic conservatory theme. Breathe an "O" shape to fog the glass, write with your fingertip, stamp berry lipstick marks, attract pond koi and butterflies in Play mode, and snap Polaroid-style picnic prints.
+## Run locally
 
-## Features
-- **Zero Build Step**: Plain ES modules ready for GitHub Pages or local hosting.
-- **On-Device Vision**: Uses MediaPipe Face Landmarker and Hand Landmarker (processed 100% locally on your device; no microphone required).
-- **Floating-Point Fog Engine**: High-precision `Float32Array` condensation mask with radial segment stamping, gradual 2-minute evaporation, and water drips.
-- **Picnic Scenes & Tools**:
-  - **Scenes**: Sunny Meadow, Butterfly & Koi Pond (Aquarium mode), Sunshower Dew, and Twilight Fireflies.
-  - **Tools**: Finger Write (clears fog), Cloth Wipe (clears fog + marks), Berry Lipstick & Picnic Stamps (Kiss, Strawberry, Daisy), and Play Mode (steers critters without drawing).
+From this directory, run PowerShell: `powershell -ExecutionPolicy Bypass -File .\server.ps1`
+Then open http://127.0.0.1:8080. Use HTTPS when hosted; file:// does not support module loading or webcam permissions.
 
-## Running Locally
-Because ES modules and webcam permissions require `localhost` or `HTTPS`, do not open `index.html` via `file://`.
+Open /tests.html to run the browser regression suite.
 
-### Windows (PowerShell)
-Double-click `start.bat` or run:
-```powershell
-powershell -ExecutionPolicy Bypass -File .\serve.ps1
+## Controls
+
+- Start Camera or Explore without a camera. Camera requests video only. MediaPipe models load from Google/jsDelivr; frames are processed locally.
+- Hold F or Hold to fog; drag with Write, Wipe, or Ink & stamps. C clears mist. Undo restores marks and fog.
+- Choose meadow, koi pond, sunshower, or twilight. Play attracts critters; Pause Motion freezes scene animation. Reduced motion preference pauses scenes by default.
+- Adjust brush size, ink color and stamp; choose paper finish, date and 0/3/5/10 second timer. Space starts capture; Escape cancels.
+- Prints are temporary in-memory PNGs (up to eight). Save downloads a print; leaving or reloading discards unsaved prints.
+
+## Architecture
+
+index.html loads js/app.js; styles.css is the shared stylesheet. Modules implement fog, surface marks, scene rendering, tracking, classification and PNG export. No runtime build or framework dependency. Landscape backgrounds are cached procedural canvas artwork.
+
+See AUDIT.md for findings, implemented changes and follow-up priorities.

@@ -6,7 +6,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Root = (Get-Location).Path
+$Root = [System.IO.Path]::GetFullPath($PSScriptRoot)
+$RootPrefix = $Root.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 $Prefix = "http://127.0.0.1:$Port/"
 
 $MimeTypes = @{
@@ -46,7 +47,7 @@ try {
     $RelativePath = $UrlPath.TrimStart('/').Replace('/', [System.IO.Path]::DirectorySeparatorChar)
     $FullPath = [System.IO.Path]::GetFullPath((Join-Path $Root $RelativePath))
 
-    if (-not $FullPath.StartsWith($Root, [System.StringComparison]::OrdinalIgnoreCase)) {
+    if (-not $FullPath.StartsWith($RootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
       $Response.StatusCode = 403
       $Response.Close()
       continue
