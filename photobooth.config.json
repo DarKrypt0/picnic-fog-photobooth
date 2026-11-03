@@ -1,0 +1,44 @@
+{
+  "share": {
+    "enabled": true,
+    "port": 8081,
+    "host": "",
+    "folder": "gifs"
+  },
+  "handoff": {
+    "enabled": true,
+    "folder": "C:\\Users\\hh\\Downloads\\Photobooth\\incoming",
+    "templatesFolder": "C:\\Users\\hh\\Downloads\\Photobooth\\templates",
+    "defaultLayout": "2x6_strip4",
+    "defaultOrientation": "auto",
+    "defaultCopies": 1,
+    "layouts": {
+      "2x6_strip4":      { "label": "2x6 Strip (4 shots)",          "shots": 4, "widthIn": 2,    "heightIn": 6,    "slotW": 484, "slotH": 339 },
+      "photocard":       { "label": "2.16x3.4 Photocard (1 shot)",  "shots": 1, "widthIn": 2.16, "heightIn": 3.4,  "slotW": 648, "slotH": 1020 },
+      "mini_strip24x72": { "label": "24x72mm Mini-Strip (4 shots)", "shots": 4, "widthIn": 0.94, "heightIn": 2.83, "slotW": 484, "slotH": 339 },
+      "4x6_grid2x2":     { "label": "4x6 Grid 2x2 (4 shots)",       "shots": 4, "widthIn": 4,    "heightIn": 6,    "slotW": 480, "slotH": 680 },
+      "4x6_grid2x3":     { "label": "4x6 Grid 2x3 (6 shots)",       "shots": 6, "widthIn": 4,    "heightIn": 6,    "slotW": 480, "slotH": 480 }
+    }
+  },
+  "digiCamControl": {
+    "enabled": false,
+    "remoteCmdPath": "C:\\Program Files (x86)\\digiCamControl\\CameraControlRemoteCmd.exe",
+    "webUrl": "http://127.0.0.1:5513",
+    "sessionFolder": "%USERPROFILE%\\Pictures\\digiCamControl\\Session1",
+    "timeoutSeconds": 20,
+    "mirrorImage": true
+  },
+  "irfanView": {
+    "exePath": "C:\\Program Files\\IrfanView\\i_view64.exe",
+    "printer": "",
+    "printFolder": "prints",
+    "defaultPaperSize": "4x6",
+    "paperSizes": {
+      "4x6":   { "label": "4x6 in postcard",           "widthIn": 6,     "heightIn": 4,     "iniFolder": "irfan-profiles\\4x6",   "printer": "" },
+      "5x7":   { "label": "5x7 in",                    "widthIn": 7,     "heightIn": 5,     "iniFolder": "irfan-profiles\\5x7",   "printer": "" },
+      "strip": { "label": "2x6 in strips (2 per 4x6)", "widthIn": 4,     "heightIn": 6,     "iniFolder": "irfan-profiles\\strip", "printer": "", "layout": "strip" },
+      "A5":    { "label": "A5",                        "widthIn": 8.27,  "heightIn": 5.83,  "iniFolder": "irfan-profiles\\A5",    "printer": "" },
+      "A4":    { "label": "A4",                        "widthIn": 11.69, "heightIn": 8.27,  "iniFolder": "irfan-profiles\\A4",    "printer": "" }
+    }
+  }
+}
