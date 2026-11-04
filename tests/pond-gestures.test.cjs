@@ -168,3 +168,22 @@ test('fish remain drawable when Three.js or WebGL is unavailable',async()=>{
   const ctx={save(){},restore(){},translate(){},rotate(){},createRadialGradient(){return gradient;},beginPath(){},ellipse(){bodies++;},fill(){},moveTo(){},lineTo(){},closePath(){},arc(){},stroke(){}};
   assert.doesNotThrow(()=>renderer.render(ctx,pond));assert.ok(bodies>=8);assert.doesNotThrow(()=>renderer.dispose());
 });
+
+test('all picnic-themed scenes render without errors',async()=>{
+  const vm=require('node:vm');
+  const {PondSimulation}=await load('js/scenes/pond.js');
+  const {FishRenderer}=await load('js/scenes/fish-renderer.js');
+  const {CreatureRenderer}=await load('js/scenes/creature-renderer.js');
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  const source=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^\s*import .*?;$/gm,'');
+  const sandbox={window:{addEventListener(){}},PondSimulation,FishRenderer,CreatureRenderer,document:{getElementById(){return {textContent:''};}}};
+  vm.createContext(sandbox);vm.runInContext(`'use strict';${source}\nglobalThis.SM=SceneManager`,sandbox);
+  const sm=new sandbox.SM(640,480);
+  const gradient={addColorStop(){}};
+  const ctx={save(){},restore(){},translate(){},rotate(){},scale(){},fillRect(){},createRadialGradient(){return gradient;},createLinearGradient(){return gradient;},beginPath(){},ellipse(){},fill(){},moveTo(){},lineTo(){},closePath(){},arc(){},stroke(){},drawImage(){}};
+  for(const sceneId of ['meadow','blossoms','butterflies','gingham','shade']){
+    sm.setScene(sceneId);
+    assert.doesNotThrow(()=>sm.renderDemoBackground(ctx));
+    assert.doesNotThrow(()=>sm.renderScene(ctx,0.033,{x:0.5,y:0.5,pose:'point'}));
+  }
+});

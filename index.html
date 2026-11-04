@@ -6,17 +6,41 @@
   <title>Picnic Glass — Fog Photobooth</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="./js/vendor/GLTFLoader.js"></script>
+  <script src="./js/vendor/creature-models-bundle.js"></script>
+  <script>
+    if (typeof THREE !== 'undefined' && !THREE.GLTFLoader) {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+      document.head.appendChild(s);
+    }
+  </script>
   <script src="./js/vendor/qrcode.js"></script>
   <style>
     :root {
-      --slate-glass: #1F3038;
-      --slate-glass-alpha: rgba(31, 48, 56, 0.86);
-      --fog-color: #D6E2E8;
-      --frost-white: #F4F8F9;
+      --bg-espresso: #19120D;
+      --bg-panel: #211812;
+      --bg-panel-inset: #16100C;
+      --bg-elevated: #2B2018;
+      --border-warm: rgba(255, 224, 194, 0.11);
+      --border-warm-strong: rgba(255, 224, 194, 0.22);
+      --text-cream: #F7EFE6;
+      --text-muted: #A69382;
+      --text-dim: #7A695A;
+      --accent-coral: #D94E3B;
+      --accent-coral-hover: #E65D4A;
+      --accent-coral-soft: rgba(217, 78, 59, 0.16);
+      --accent-amber: #E5A94C;
+      --status-sage: #6AC48A;
+      --slate-glass: #19120D;
+      --slate-glass-alpha: rgba(33, 24, 18, 0.92);
+      --fog-color: #D8C8B8;
+      --frost-white: #F7EFE6;
       --meadow-teal: #7FC8C2;
-      --lamp-amber: #F2B544;
+      --lamp-amber: #E5A94C;
+      --font-display: 'Fraunces', Georgia, serif;
       --font-hand: 'Caveat', 'Comic Sans MS', cursive;
       --font-ui: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
@@ -24,257 +48,822 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      width: 100%; height: 100%; overflow: hidden; background-color: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); user-select: none; -webkit-user-select: none;
+      width: 100%; height: 100%; overflow: hidden;
+      background-color: var(--bg-espresso);
+      color: var(--text-cream);
+      font-family: var(--font-ui);
+      user-select: none; -webkit-user-select: none;
     }
 
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
     .hidden { display: none !important; }
 
-    .app-shell { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
-    .stage-container { position: absolute; inset: 0; overflow: hidden; z-index: 1; touch-action: none; background: radial-gradient(circle at center, #1b2a32 0%, #0e171c 100%); }
-    .stage-canvas, .ui-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; border-radius: 12px; }
-    .stage-canvas { box-shadow: 0 14px 44px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(244, 248, 249, 0.35); }
+    /* Overall App Shell */
+    .app-shell {
+      width: 100vw; height: 100vh;
+      display: flex; flex-direction: column;
+      padding: 10px 18px 8px;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    /* Top Header Bar */
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-shrink: 0;
+      padding: 2px 4px;
+    }
+    .brand-cluster { display: flex; align-items: center; gap: 10px; }
+    .brand-logo-card {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #F7EFE6; color: #3A2218;
+      padding: 5px 12px; border-radius: 10px;
+      font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      border: 1.5px solid #E6D2BE;
+    }
+    .brand-logo-card span.logo-accent { color: var(--accent-coral); font-family: var(--font-hand); font-size: 1.25rem; font-weight: 700; }
+
+    .nav-pill-group {
+      display: inline-flex; align-items: center;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-warm);
+      border-radius: 999px;
+      padding: 3px; gap: 4px;
+    }
+    .nav-pill {
+      border: none; background: transparent; color: var(--text-muted);
+      font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
+      padding: 6px 16px; border-radius: 999px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .nav-pill.active {
+      background: var(--accent-coral); color: #fff;
+      box-shadow: 0 2px 10px rgba(217, 78, 59, 0.35);
+    }
+    .nav-pill-count {
+      background: rgba(255,255,255,0.12); padding: 1px 6px; border-radius: 999px; font-size: 0.74rem;
+    }
+
+    .top-utilities { display: flex; align-items: center; gap: 10px; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 10px; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 500; color: var(--text-muted);
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-amber); }
+    .status-dot.ready { background: var(--status-sage); box-shadow: 0 0 8px rgba(106, 196, 138, 0.6); }
+    .status-dot.error { background: var(--accent-coral); }
+
+    /* Two-Column Studio Workspace */
+    .studio-workspace {
+      flex: 1; min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 14px;
+    }
+
+    /* Left Main Column */
+    .studio-main-col {
+      display: flex; flex-direction: column;
+      gap: 10px; min-height: 0; min-width: 0;
+    }
+
+    /* Scene Header Row ("SET THE SCENE / A little picnic magic.") */
+    .scene-header-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .scene-title-group { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .eyebrow-label {
+      font-size: 0.64rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-muted); display: block;
+    }
+    .scene-headline {
+      font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; color: var(--text-cream);
+      line-height: 1.15;
+    }
+    .scene-selector { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .scene-motion-cluster { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.78rem; }
+
+    /* Buttons & Inputs */
+    .btn {
+      min-height: 36px; padding: 0 13px; border-radius: 10px;
+      border: 1px solid var(--border-warm-strong);
+      background: var(--bg-panel); color: var(--text-cream);
+      font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.15s ease; text-decoration: none;
+    }
+    .btn:hover:not(:disabled) { border-color: rgba(255, 224, 194, 0.42); background: var(--bg-elevated); }
+    .btn:focus-visible, .scene-select:focus-visible { outline: 2px solid var(--accent-amber); outline-offset: 2px; }
+    .btn:disabled { opacity: 0.42; cursor: not-allowed; }
+    .btn-compact { min-height: 34px; padding: 0 12px; font-size: 0.78rem; border-radius: 9px; }
+    .btn-primary { background: var(--accent-coral); color: #fff; border-color: transparent; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-coral-hover); }
+    .btn-secondary { background: rgba(255, 235, 215, 0.08); }
+    .btn-amber { background: rgba(229, 169, 76, 0.16); color: #F5D08A; border-color: rgba(229, 169, 76, 0.35); font-weight: 600; }
+    .btn-amber:hover:not(:disabled) { background: rgba(229, 169, 76, 0.26); border-color: rgba(229, 169, 76, 0.55); }
+
+    .scene-select {
+      min-height: 36px; padding: 0 12px; border-radius: 10px;
+      border: 1px solid var(--border-warm-strong);
+      background: var(--bg-panel); color: var(--text-cream);
+      font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    }
+
+    /* Interactive Stage Viewport */
+    .stage-container {
+      position: relative; flex: 1; min-height: 180px;
+      border-radius: 16px; overflow: hidden; touch-action: none;
+      background: radial-gradient(circle at center, #261C15 0%, #120D0A 100%);
+      border: 1px solid var(--border-warm);
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+    }
+    .stage-canvas, .ui-canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: block; border-radius: 14px;
+    }
     .ui-canvas { pointer-events: none; z-index: 2; }
 
-    .top-bar, .bottom-toolbar {
-      position: relative; z-index: 10; background: var(--slate-glass-alpha); backdrop-filter: blur(8px); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid rgba(244, 248, 249, 0.12);
+    /* Floating Stage Overlays (matching reference photo) */
+    .stage-badge-tl {
+      position: absolute; top: 14px; left: 16px; z-index: 6;
+      background: rgba(22, 16, 12, 0.72); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-cream);
+      display: inline-flex; align-items: center; gap: 6px; pointer-events: none;
     }
-    .bottom-toolbar { border-bottom: none; border-top: 2px solid rgba(244, 248, 249, 0.12); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-
-    .brand-cluster, .scene-selector, .top-utilities, .tool-group, .capture-cluster { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-    .btn {
-      min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.25); background: rgba(31, 48, 56, 0.9); color: var(--frost-white); font-family: var(--font-ui); font-size: 0.92rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease, border-color 0.15s ease; text-decoration: none;
+    .stage-badge-tl .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-sage); }
+    .stage-pill-tr {
+      position: absolute; top: 14px; right: 16px; z-index: 6;
+      background: rgba(247, 239, 230, 0.92); color: #7C2D23;
+      border: none; padding: 5px 12px; border-radius: 999px;
+      font-family: var(--font-ui); font-size: 0.74rem; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer;
     }
-    .btn:hover:not(:disabled) { border-color: var(--meadow-teal); background: rgba(127, 200, 194, 0.18); }
-    .btn:focus-visible, .scene-select:focus-visible { outline: 3px solid var(--lamp-amber); outline-offset: 2px; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-compact { min-height: 40px; padding: 0 10px; font-size: 0.85rem; }
-    .btn-primary, .tool-btn.active { background: var(--meadow-teal); color: var(--slate-glass); border-color: var(--frost-white); }
-    .btn-secondary { background: rgba(214, 226, 232, 0.16); }
-    .btn-amber { background: var(--lamp-amber); color: var(--slate-glass); border-color: #fff; font-weight: 700; }
-    .btn-capture { padding: 0 22px; font-size: 1rem; }
+    .stage-watermark {
+      position: absolute; top: 22px; left: 50%; transform: translateX(-50%); z-index: 5;
+      font-family: var(--font-hand); font-size: 2.1rem; font-weight: 700;
+      color: rgba(255, 250, 244, 0.72); text-shadow: 0 2px 12px rgba(0,0,0,0.35);
+      pointer-events: none;
+    }
+    .stage-controls-br {
+      position: absolute; bottom: 12px; right: 14px; z-index: 6;
+      display: flex; gap: 6px;
+    }
+    .stage-icon-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: rgba(22, 16, 12, 0.72); backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.16); color: var(--text-cream);
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 0.85rem;
+    }
+    .stage-icon-btn:hover { background: rgba(45, 33, 25, 0.9); }
 
-    .scene-select { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1.5px solid rgba(244, 248, 249, 0.3); background: var(--slate-glass); color: var(--frost-white); font-family: var(--font-ui); font-weight: 600; }
+    /* "ON THE GLASS" Panel Card */
+    .glass-panel-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-warm);
+      border-radius: 14px;
+      padding: 8px 14px;
+      display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+    }
+    .glass-panel-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    }
+    .reset-link-btn {
+      background: none; border: none; color: var(--text-muted);
+      font-family: var(--font-ui); font-size: 0.76rem; font-weight: 600;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .reset-link-btn:hover { color: var(--text-cream); }
+    .glass-tools-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .fog-card-btn {
+      background: rgba(217, 78, 59, 0.14);
+      border: 1.5px solid rgba(217, 78, 59, 0.55);
+      border-radius: 10px; padding: 6px 14px;
+      color: var(--text-cream); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 10px;
+      text-align: left; min-width: 210px;
+      transition: all 0.15s ease;
+    }
+    .fog-card-btn:hover { background: rgba(217, 78, 59, 0.24); border-color: var(--accent-coral); }
+    .fog-card-btn .fog-title { font-size: 0.82rem; font-weight: 700; display: block; }
+    .fog-card-btn .fog-sub { font-size: 0.7rem; color: var(--text-muted); display: block; }
 
-    .status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,0.35); font-size: 0.85rem; font-weight: 600; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lamp-amber); }
-    .status-dot.ready { background: var(--meadow-teal); }
-    .status-dot.error { background: #E63946; }
+    /* Bottom Capture Bar Card */
+    .bottom-toolbar {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-warm);
+      border-radius: 14px;
+      padding: 8px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .capture-left-info { display: flex; align-items: center; gap: 12px; }
+    .timer-pill-badge {
+      background: var(--bg-panel-inset); border: 1px solid var(--border-warm);
+      padding: 6px 11px; border-radius: 9px; font-size: 0.78rem; font-weight: 600; color: var(--text-cream);
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .capture-story-copy strong { display: block; font-size: 0.84rem; color: var(--text-cream); }
+    .capture-story-copy span { font-size: 0.72rem; color: var(--text-muted); }
 
-    .intro-overlay { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(31, 48, 56, 0.45); }
-    .picnic-card { max-width: 520px; width: 100%; background: var(--slate-glass-alpha); backdrop-filter: blur(12px); border: 2px solid rgba(244, 248, 249, 0.3); border-radius: 18px; padding: 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.45); }
-    .picnic-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(242, 181, 68, 0.2); color: var(--lamp-amber); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; }
-    .caveat-title { font-family: var(--font-hand); font-size: 2.8rem; color: var(--frost-white); line-height: 1.1; margin-bottom: 10px; }
-    .intro-lead { font-size: 0.98rem; line-height: 1.5; color: var(--fog-color); margin-bottom: 14px; }
-    .intro-steps { list-style: none; display: grid; gap: 8px; margin-bottom: 14px; font-size: 0.92rem; }
+    .btn-shutter-pill {
+      background: var(--accent-coral); color: #fff;
+      border: none; border-radius: 999px;
+      padding: 7px 24px 7px 10px;
+      display: inline-flex; align-items: center; gap: 12px;
+      cursor: pointer; box-shadow: 0 6px 20px rgba(217, 78, 59, 0.4);
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+    .btn-shutter-pill:hover:not(:disabled) { background: var(--accent-coral-hover); transform: translateY(-1px); }
+    .shutter-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #fff; border: 3px solid rgba(255,255,255,0.35);
+      background-clip: content-box; padding: 2px;
+      display: inline-block; flex-shrink: 0;
+    }
+    .shutter-text { text-align: left; line-height: 1.15; }
+    .shutter-text strong { display: block; font-size: 0.88rem; font-weight: 700; }
+    .shutter-text small { font-size: 0.68rem; opacity: 0.86; font-weight: 500; }
+
+    .capture-right-status { text-align: right; font-size: 0.76rem; }
+    .capture-right-status .ready-line { color: var(--text-cream); font-weight: 600; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    .capture-right-status .ready-line::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--status-sage); }
+    .capture-right-status .moments-sub { color: var(--text-muted); font-size: 0.7rem; }
+
+    /* Right Sidebar: "Picnic Prints" Card */
+    .photo-tray {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-warm);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex; flex-direction: column; gap: 10px;
+      overflow-y: auto; min-height: 0;
+    }
+    .tray-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .tray-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--text-cream); }
+    .tray-subtitle { font-size: 0.74rem; color: var(--text-muted); display: block; }
+
+    /* Live Interactive Template & Strip Preview Stage */
+    .template-preview-stage {
+      background: var(--bg-panel-inset);
+      border: 1px solid var(--border-warm);
+      border-radius: 12px;
+      padding: 10px 12px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .preview-stage-top {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .template-paper-card {
+      background: #F6EFE6; color: #3A251B;
+      border-radius: 8px; padding: 8px 8px 10px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.55);
+      transform: none;
+      transition: all 0.2s ease;
+      display: flex; flex-direction: column; gap: 5px;
+      width: 128px;
+      position: relative;
+    }
+    .template-card-overlay {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: fill; pointer-events: none; z-index: 5;
+    }
+    .template-paper-card.grid-mode { width: 154px; }
+    .template-paper-card.single-mode {
+      width: 124px;
+      padding: 0;
+      gap: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: transparent !important;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.55);
+    }
+    .template-paper-card.single-mode .template-slots-grid {
+      gap: 0;
+      width: 100%;
+    }
+    .template-paper-card.single-mode .template-slot {
+      border: none;
+      border-radius: 10px;
+      aspect-ratio: 55 / 85;
+      background: #EFE6DC;
+      overflow: hidden;
+    }
+    .template-paper-card.single-mode .template-card-footer {
+      display: none;
+    }
+
+    .template-slots-grid {
+      display: grid; gap: 4px; width: 100%;
+      position: relative; z-index: 2;
+    }
+    .template-slot {
+      background: rgba(58, 37, 27, 0.08);
+      border: 1px solid rgba(58, 37, 27, 0.14);
+      border-radius: 4px;
+      aspect-ratio: 1.42 / 1;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 600; color: rgba(58, 37, 27, 0.45);
+      overflow: hidden; position: relative;
+    }
+    .template-slot.active-next {
+      background: rgba(217, 78, 59, 0.13);
+      border-color: rgba(217, 78, 59, 0.75);
+      border-width: 1.5px;
+      color: var(--accent-coral);
+    }
+    .template-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .template-card-footer {
+      text-align: center; padding-top: 2px; line-height: 1.05;
+      position: relative; z-index: 2;
+    }
+    .template-card-footer .script-brand {
+      font-family: var(--font-hand); font-size: 0.95rem; font-weight: 700; color: var(--accent-coral); display: block;
+    }
+    .template-card-footer .micro-tag {
+      font-size: 0.45rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58, 37, 27, 0.55); display: block;
+    }
+    .preview-stage-caption { font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+
+    /* Hardware & Print Controls inside Right Sidebar */
+    .booth-hardware { display: flex; flex-direction: column; gap: 10px; font-size: 0.76rem; }
+    .control-row-header { display: flex; align-items: center; justify-content: space-between; color: var(--text-cream); font-weight: 600; font-size: 0.76rem; margin-bottom: 4px; }
+    .control-row-header span.sub-val { color: var(--text-muted); font-weight: 500; font-size: 0.72rem; }
+
+    .layout-segmented {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      background: var(--bg-panel-inset); padding: 4px; border-radius: 10px;
+      border: 1px solid var(--border-warm);
+    }
+    .seg-btn {
+      border: 1px solid transparent; background: transparent; color: var(--text-muted);
+      font-family: var(--font-ui); font-size: 0.76rem; font-weight: 600;
+      padding: 7px 8px; border-radius: 8px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .seg-btn:hover:not(.active) { background: rgba(255,255,255,0.04); color: var(--text-cream); }
+    .seg-btn.active {
+      background: var(--accent-coral); color: #fff;
+      box-shadow: 0 2px 8px rgba(217, 78, 59, 0.35);
+    }
+
+    .copies-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .copies-stepper {
+      display: inline-flex; align-items: center;
+      background: var(--bg-panel-inset); border: 1px solid var(--border-warm-strong);
+      border-radius: 8px; overflow: hidden;
+    }
+    .step-btn {
+      background: transparent; border: none; color: var(--text-cream);
+      width: 28px; height: 30px; cursor: pointer; font-weight: 700; font-size: 0.9rem;
+    }
+    .step-btn:hover { background: rgba(255,255,255,0.08); }
+    #input-booth-copies {
+      width: 34px; text-align: center; background: transparent; border: none;
+      color: var(--text-cream); font: inherit; font-weight: 700; -moz-appearance: textfield;
+    }
+
+    .btn-print-main {
+      width: 100%; min-height: 42px; border-radius: 12px;
+      background: var(--bg-elevated); border: 1.5px solid var(--border-warm-strong);
+      color: var(--text-muted); font-family: var(--font-ui); font-size: 0.86rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-print-main:hover:not(:disabled) { border-color: rgba(255, 224, 194, 0.4); color: var(--text-cream); }
+    .btn-print-main.ready {
+      background: var(--accent-coral); border-color: transparent; color: #fff;
+      box-shadow: 0 4px 18px rgba(217, 78, 59, 0.45);
+    }
+    .btn-print-main.ready:hover:not(:disabled) { background: var(--accent-coral-hover); }
+
+    .print-sub-notes { display: flex; flex-direction: column; gap: 3px; text-align: center; margin-top: 2px; }
+    .print-sub-note { font-size: 0.69rem; color: var(--text-muted); line-height: 1.3; }
+
+    .timer-select-wrap {
+      position: relative; display: inline-flex; align-items: center;
+      background: var(--bg-panel-inset); border: 1px solid var(--border-warm);
+      border-radius: 9px; padding: 4px 8px; gap: 5px;
+      font-size: 0.78rem; font-weight: 600; color: var(--text-cream);
+    }
+    .timer-pill-select {
+      appearance: none; -webkit-appearance: none;
+      background: transparent; border: none; color: var(--text-cream);
+      font: inherit; font-weight: 600; cursor: pointer; padding-right: 12px;
+    }
+    .timer-pill-select:focus { outline: none; }
+    .timer-chevron { position: absolute; right: 7px; pointer-events: none; font-size: 0.62rem; color: var(--text-muted); }
+
+    .gesture-hint-note { font-size: 0.71rem; color: var(--text-muted); line-height: 1.35; padding-top: 2px; }
+
+    .booth-hardware label { display: flex; flex-direction: column; gap: 3px; color: var(--text-muted); }
+    .booth-hardware label.booth-check { flex-direction: row; align-items: center; gap: 6px; }
+    .booth-hardware select {
+      font: inherit; padding: 6px 10px; border-radius: 8px;
+      width: 100%; min-width: 0;
+      background: var(--bg-panel-inset); color: var(--text-cream);
+      border: 1px solid var(--border-warm-strong);
+    }
+
+    .tray-warning { background: rgba(229, 169, 76, 0.16); border: 1px solid var(--accent-amber); color: #F5D08A; font-size: 0.74rem; padding: 6px 8px; border-radius: 8px; }
+    .photo-list { display: flex; flex-direction: column; gap: 10px; }
+    .empty-tray-msg { font-size: 0.74rem; color: var(--text-muted); text-align: center; padding: 6px 0; }
+    .photo-card { background: #F6EFE6; color: #2B1E16; padding: 7px; border-radius: 9px; display: flex; flex-direction: column; gap: 6px; }
+    .photo-card img { width: 100%; border-radius: 5px; display: block; }
+    .photo-card-actions { display: flex; gap: 5px; }
+    .photo-card-actions .btn { flex: 1; min-height: 30px; font-size: 0.74rem; padding: 0 8px; }
+
+    /* Bottom Studio Footer */
+    .studio-footer-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; flex-shrink: 0;
+      font-size: 0.68rem; color: var(--text-dim); padding: 0 4px;
+    }
+    .studio-footer-bar a { color: var(--text-muted); text-decoration: underline; }
+
+    /* Modals & Overlays */
+    .intro-overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 10, 7, 0.72); backdrop-filter: blur(8px); }
+    .picnic-card { max-width: 520px; width: 100%; max-height: calc(100dvh - 40px); overflow-y: auto; background: var(--bg-panel); border: 1.5px solid var(--border-warm-strong); border-radius: 18px; padding: 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.65); }
+    .picnic-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--accent-coral-soft); color: #F28B7B; font-weight: 700; font-size: 0.78rem; margin-bottom: 8px; }
+    .caveat-title { font-family: var(--font-display); font-size: 2.1rem; color: var(--text-cream); line-height: 1.15; margin-bottom: 10px; }
+    .intro-lead { font-size: 0.92rem; line-height: 1.5; color: var(--text-muted); margin-bottom: 14px; }
+    .intro-steps { list-style: none; display: grid; gap: 8px; margin-bottom: 16px; font-size: 0.86rem; color: var(--text-cream); }
     .intro-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 
-    .countdown-overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(31, 48, 56, 0.25); }
-    .countdown-number { font-family: var(--font-hand); font-size: 7rem; font-weight: 700; color: var(--lamp-amber); text-shadow: 0 4px 20px rgba(0,0,0,0.65); }
+    .countdown-overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(20, 14, 10, 0.35); }
+    .countdown-number { font-family: var(--font-display); font-size: 6.5rem; font-weight: 700; color: var(--text-cream); text-shadow: 0 4px 24px rgba(0,0,0,0.75); }
+    .toast-banner { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 15; background: var(--bg-panel); border: 1.5px solid var(--accent-coral); color: var(--text-cream); padding: 7px 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; pointer-events: none; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
 
-    .toast-banner { position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 15; background: var(--slate-glass-alpha); border: 1.5px solid var(--meadow-teal); color: var(--frost-white); padding: 8px 18px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; pointer-events: none; text-align: center; }
-
-    .photo-tray { position: absolute; top: 66px; right: 12px; bottom: 74px; width: 250px; z-index: 12; background: var(--slate-glass-alpha); backdrop-filter: blur(10px); border: 1.5px solid rgba(244, 248, 249, 0.2); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-    .tray-title { font-family: var(--font-hand); font-size: 1.6rem; }
-    .tray-subtitle { font-size: 0.75rem; color: var(--fog-color); }
-    .booth-hardware { display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; }
-    .booth-hardware label { display: flex; flex-direction: column; gap: 2px; }
-    .booth-hardware label.booth-check { flex-direction: row; align-items: center; gap: 6px; }
-    .booth-hardware select { font: inherit; padding: 4px 6px; border-radius: 8px; }
-    .tray-warning { background: rgba(242, 181, 68, 0.2); border: 1px solid var(--lamp-amber); color: var(--lamp-amber); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px; }
-    .photo-list { display: flex; flex-direction: column; gap: 12px; }
-    .photo-card { background: var(--frost-white); color: var(--slate-glass); padding: 8px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; }
-    .photo-card img { width: 100%; border-radius: 6px; display: block; }
-    .photo-card-actions { display: flex; gap: 6px; }
-    .photo-card-actions .btn { flex: 1; min-height: 36px; font-size: 0.8rem; }
-
-    @media (max-width: 768px) {
-      .photo-tray { top: auto; left: 12px; right: 12px; bottom: 84px; width: auto; height: 190px; }
-      .photo-list { flex-direction: row; overflow-x: auto; }
-      .photo-card { min-width: 150px; }
-    }
-    .stage-container { z-index: auto; }
-    .intro-overlay { position: fixed; z-index: 30; }
-    .picnic-card { max-height: calc(100dvh - 40px); overflow-y: auto; }
-    .gif-modal { position: fixed; inset: 0; z-index: 35; background: rgba(15, 25, 30, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .gif-card { background: var(--slate-glass); border: 1.5px solid rgba(244, 248, 249, 0.25); border-radius: 16px; padding: 18px; max-width: 680px; width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    .gif-modal { position: fixed; inset: 0; z-index: 35; background: rgba(15, 10, 7, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .gif-card { background: var(--bg-panel); border: 1.5px solid var(--border-warm-strong); border-radius: 16px; padding: 18px; max-width: 680px; width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
     .gif-body { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; }
     .gif-preview { max-width: 340px; max-height: 56dvh; width: 100%; border-radius: 10px; display: block; }
-    .qr-panel { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 210px; text-align: center; }
+    .qr-panel { display: flex; align-items: center; flex-direction: column; gap: 8px; min-width: 210px; text-align: center; }
     .qr-box { background: #fff; padding: 10px; border-radius: 10px; display: inline-block; line-height: 0; }
     .qr-box svg, .qr-box img { display: block; width: 176px; height: 176px; }
-    .qr-url { font-size: 0.75rem; color: var(--fog-color); word-break: break-all; }
+    .qr-url { font-size: 0.75rem; color: var(--text-muted); word-break: break-all; }
     .gif-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    @media (max-width: 900px) {
+      html, body { overflow: auto; }
+      .app-shell { height: auto; min-height: 100vh; overflow: visible; }
+      .studio-workspace { grid-template-columns: 1fr; }
+      .stage-container { min-height: 360px; }
+    }
   </style>
 </head>
 <body>
   <div id="app" class="app-shell">
     <video id="camera-video" playsinline muted class="sr-only"></video>
 
-    <main id="stage-container" class="stage-container" aria-label="Interactive glass photobooth pane">
-      <canvas id="stage-canvas" class="stage-canvas"></canvas>
-      <canvas id="ui-canvas" class="ui-canvas" aria-hidden="true"></canvas>
-
-      <div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-      <div id="toast-banner" class="toast-banner hidden" role="status"></div>
-
-      <div id="countdown-overlay" class="countdown-overlay hidden" role="dialog" aria-label="Photo countdown">
-        <span id="countdown-number" class="countdown-number">3</span>
-        <button id="btn-cancel-countdown" type="button" class="btn btn-amber">Cancel (Esc)</button>
-      </div>
-
-      <section id="intro-overlay" class="intro-overlay" aria-labelledby="intro-title">
-        <div class="intro-card picnic-card">
-          <div class="picnic-badge">🧺 Conservatory Picnic Booth</div>
-          <h1 id="intro-title" class="caveat-title">Picnic on the Glass</h1>
-          <p class="intro-lead">
-            Play with a misty greenhouse window overlooking a sunny picnic meadow.
-            <strong>Camera frames are processed on this device</strong> and never uploaded.
-          </p>
-          <ul class="intro-steps">
-            <li><strong>😮 Make an "O" mouth pose</strong> to breathe vapor/fog onto the glass.</li>
-            <li><strong>👌 Pinch thumb &amp; index finger</strong> then extend your index finger to clear fog; <strong>pinch back</strong> to stop (or spread palm to wipe).</li>
-            <li><strong>📸 Press Photo</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake.</li>
-            <li><strong>Pond:</strong> point to guide the fish. Bring all five fingertips together like a beak, hold, then release to drop another portion. Other hands scare them away. Use Play and Drop fish food without a camera.</li>
-          </ul>
-          <div class="intro-actions">
-            <button id="btn-start-camera" type="button" class="btn btn-primary">Start Camera</button>
-            <button id="btn-try-demo" type="button" class="btn btn-secondary">Try Picnic Demo (No Camera)</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="gif-modal" class="gif-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gif-modal-title">
-        <div class="gif-card">
-          <h2 id="gif-modal-title" class="tray-title">🎞️ Animated Picnic GIF</h2>
-          <div class="gif-body">
-            <img id="gif-preview" class="gif-preview" alt="Compiled animated GIF" />
-            <div class="qr-panel">
-              <div id="qr-box" class="qr-box" aria-label="QR code to download GIF"></div>
-              <p id="qr-caption" class="tray-subtitle">Scan with your phone (same Wi‑Fi) to save the GIF</p>
-              <span id="qr-url" class="qr-url"></span>
-            </div>
-          </div>
-          <div class="gif-actions">
-            <a id="btn-download-gif" class="btn btn-primary" download="picnic-glass.gif">Download GIF</a>
-            <button id="btn-close-gif" type="button" class="btn btn-secondary">Close</button>
-          </div>
-        </div>
-      </section>
-    </main>
-
+    <!-- Top Studio Header -->
     <header class="top-bar" role="banner">
       <div class="brand-cluster">
+        <div class="brand-logo-card">
+          <span>🧺</span>
+          <span class="logo-accent">Picnic Glass</span>
+        </div>
+      </div>
+
+      <nav class="nav-pill-group" aria-label="Workspace view">
+        <button type="button" class="nav-pill active" id="pill-photobooth">
+          📷 Photobooth
+        </button>
+        <button type="button" class="nav-pill" id="btn-toggle-tray" aria-expanded="true">
+          My moments <span id="photo-count" class="nav-pill-count">0</span>
+        </button>
+      </nav>
+
+      <div class="top-utilities">
         <span class="status-pill" id="camera-status-pill" title="Camera and on-device tracking status">
           <span class="status-dot" id="status-dot"></span>
           <span id="status-text">Demo Mode</span>
         </span>
         <button id="btn-retry-camera" type="button" class="btn btn-compact hidden">Retry Camera</button>
-      </div>
-
-      <div class="scene-selector" role="group" aria-label="Picnic window scene">
-        <label for="select-scene" class="control-label">Scene:</label>
-        <select id="select-scene" class="scene-select">
-          <option value="meadow">🌻 Sunny Picnic Meadow</option>
-          <option value="aquarium">🐟 3D Koi &amp; Goldfish</option>
-          <option value="fireflies">✨ Twilight Fireflies</option>
-        </select>
-        <button id="btn-pause-scene" type="button" class="btn btn-compact" aria-pressed="false" title="Pause scene animation">
-          Pause Motion
-        </button>
-      </div>
-
-      <div class="top-utilities">
-        <button id="btn-toggle-tray" type="button" class="btn btn-compact" aria-expanded="true">
-          Photos (<span id="photo-count">0</span>/8)
-        </button>
-        <button id="btn-help" type="button" class="btn btn-compact" aria-label="Show controls help">?</button>
+        <button id="btn-help" type="button" class="btn btn-compact" aria-label="Show controls help">❓ How to play</button>
       </div>
     </header>
 
-    <aside id="photo-tray" class="photo-tray" aria-label="Captured picnic photos">
-      <div class="tray-header">
-        <h2 class="tray-title">Picnic Prints</h2>
-        <span class="tray-subtitle">Saved on user action only</span>
+    <!-- Main Two-Column Studio Workspace -->
+    <div class="studio-workspace">
+      <!-- Left Column: Scene Bar + Glass Stage + On The Glass + Capture Bar -->
+      <div class="studio-main-col">
+        <div class="scene-header-bar" role="group" aria-label="Picnic window filter">
+          <div class="scene-title-group">
+            <div>
+              <span class="eyebrow-label">SET THE SCENE</span>
+              <h2 class="scene-headline">A little picnic magic.</h2>
+            </div>
+            <div class="scene-selector">
+              <label for="select-scene" class="sr-only">Picnic Vibe:</label>
+              <select id="select-scene" class="scene-select">
+                <option value="meadow">🌻 Sunny Picnic Meadow</option>
+                <option value="blossoms">🌸 Cherry Blossom Breeze</option>
+                <option value="butterflies">🦋 Butterfly &amp; Wildflower Garden</option>
+                <option value="gingham">🍓 Golden Hour Gingham</option>
+                <option value="shade">🍃 Dappled Tree Shade</option>
+              </select>
+              <button id="btn-remix-critters" type="button" class="btn btn-compact" title="Change up the butterflies on screen (R)">
+                🔀 Remix Butterflies
+              </button>
+            </div>
+          </div>
+
+          <div class="scene-motion-cluster">
+            <span id="scene-motion-label">Scene is moving</span>
+            <button id="btn-pause-scene" type="button" class="btn btn-compact" aria-pressed="false" title="Pause scene animation">
+              ⏸ Pause
+            </button>
+          </div>
+        </div>
+
+        <main id="stage-container" class="stage-container" aria-label="Interactive glass photobooth pane">
+          <canvas id="stage-canvas" class="stage-canvas"></canvas>
+          <canvas id="ui-canvas" class="ui-canvas" aria-hidden="true"></canvas>
+
+          <div class="stage-badge-tl">
+            <span class="live-dot"></span>
+            <span id="stage-live-text">DEMO SCENE</span>
+          </div>
+          <div class="stage-watermark">Picnic Glass</div>
+          <div class="stage-controls-br">
+            <button type="button" id="btn-mirror-stage" class="stage-icon-btn" title="Flip / mirror camera">⇋</button>
+            <button type="button" id="btn-fullscreen-stage" class="stage-icon-btn" title="Toggle fullscreen">⛶</button>
+          </div>
+
+          <div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+          <div id="toast-banner" class="toast-banner hidden" role="status"></div>
+
+          <div id="countdown-overlay" class="countdown-overlay hidden" role="dialog" aria-label="Photo countdown">
+            <span id="countdown-number" class="countdown-number">3</span>
+            <button id="btn-cancel-countdown" type="button" class="btn btn-amber">Cancel (Esc)</button>
+          </div>
+
+          <section id="intro-overlay" class="intro-overlay" aria-labelledby="intro-title">
+            <div class="intro-card picnic-card">
+              <div class="picnic-badge">🧺 Conservatory Picnic Booth</div>
+              <h1 id="intro-title" class="caveat-title">Picnic on the Glass</h1>
+              <p class="intro-lead">
+                Play with a misty greenhouse window overlooking a sunny picnic meadow.
+                <strong>Camera frames are processed on this device</strong> and never uploaded.
+              </p>
+              <ul class="intro-steps">
+                <li><strong>😮 Make an "O" mouth pose</strong> to breathe vapor/fog onto the glass.</li>
+                <li><strong>👌 Pinch thumb &amp; index finger</strong> then extend your index finger to clear fog; <strong>pinch back</strong> to stop (or spread palm to wipe).</li>
+                <li><strong>🌸 Pick a Picnic Filter</strong> — Sunny Meadow, Cherry Blossom Breeze, Butterfly Garden, Golden Hour Gingham, or Dappled Tree Shade.</li>
+                <li><strong>📸 Press Start photo strip</strong> (or <kbd>Space</kbd>) to snap a framed picnic keepsake.</li>
+              </ul>
+              <div class="intro-actions">
+                <button id="btn-start-camera" type="button" class="btn btn-primary">Start Camera</button>
+                <button id="btn-try-demo" type="button" class="btn btn-secondary">Try Picnic Demo (No Camera)</button>
+              </div>
+              <p class="model-credits" style="margin-top:12px;font-size:.72rem;line-height:1.4;color:var(--fog-color);opacity:.85">
+                3D Credits:
+                <a href="https://poly.pizza/m/2ZwYwkTVnfG" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">Butterfly</a> by <a href="https://poly.pizza/u/Poly%20by%20Google" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">Poly by Google</a> [<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">CC-BY</a>] via Poly Pizza ·
+                <a href="https://poly.pizza/m/0Wt0Mc31Qsj" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">butterfly</a> by <a href="https://poly.pizza/u/Hugo%20Gibson" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">Hugo Gibson</a> [<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">CC-BY</a>] ·
+                <a href="https://poly.pizza/m/fv6J8XW4hvC" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">Butterfly</a> by <a href="https://poly.pizza/u/sirkitree" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">sirkitree</a> [<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer" style="color:var(--meadow-teal)">CC-BY</a>] via Poly Pizza
+              </p>
+            </div>
+          </section>
+
+          <section id="gif-modal" class="gif-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gif-modal-title">
+            <div class="gif-card">
+              <h2 id="gif-modal-title" class="tray-title">🎞️ Animated Picnic GIF</h2>
+              <div class="gif-body">
+                <img id="gif-preview" class="gif-preview" alt="Compiled animated GIF" />
+                <div class="qr-panel">
+                  <div id="qr-box" class="qr-box" aria-label="QR code to download GIF"></div>
+                  <p id="qr-caption" class="tray-subtitle">Scan with your phone (same Wi‑Fi) to save the GIF</p>
+                  <span id="qr-url" class="qr-url"></span>
+                </div>
+              </div>
+              <div class="gif-actions">
+                <a id="btn-download-gif" class="btn btn-primary" download="picnic-glass.gif">Download GIF</a>
+                <button id="btn-close-gif" type="button" class="btn btn-secondary">Close</button>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <!-- "ON THE GLASS" Card -->
+        <section class="glass-panel-card" aria-label="On the glass controls">
+          <div class="glass-panel-top">
+            <span class="eyebrow-label">ON THE GLASS</span>
+            <button type="button" id="btn-reset-glass" class="reset-link-btn" title="Clear all fog from the glass">Reset glass ↺</button>
+          </div>
+          <div class="glass-tools-row">
+            <button id="btn-fog-pulse" type="button" class="fog-card-btn" title="Breathe a burst of fog onto the glass (or hold F)">
+              <span style="font-size:1.15rem">☁️</span>
+              <span>
+                <span class="fog-title">Fog glass</span>
+                <span class="fog-sub">Soft mist · <span id="glass-fog-pct">30%</span> (or hold F / breathe "O")</span>
+              </span>
+            </button>
+          </div>
+          <p id="gesture-status" role="status" class="gesture-hint-note">👌 Pinch thumb &amp; index then extend index finger to clear fog · open palm to wipe</p>
+        </section>
+
+        <!-- Bottom Capture Bar -->
+        <footer class="bottom-toolbar" role="toolbar" aria-label="Glass drawing and capture controls">
+          <div class="capture-left-info">
+            <div class="timer-select-wrap" title="Countdown duration before every shot">
+              <span class="timer-icon">⏱</span>
+              <select id="select-countdown-timer" class="timer-pill-select" title="Countdown duration">
+                <option value="3" selected>3 sec</option>
+                <option value="5">5 sec</option>
+                <option value="10">10 sec</option>
+                <option value="0">Off</option>
+              </select>
+              <span class="timer-chevron">▾</span>
+            </div>
+            <div class="capture-story-copy">
+              <strong id="capture-story-title">4 poses. One little story.</strong>
+              <span id="capture-story-sub">A countdown before every shot</span>
+            </div>
+          </div>
+
+          <div class="capture-cluster">
+            <button id="btn-photo" type="button" class="btn-shutter-pill" title="Start photo countdown (Space)">
+              <span class="shutter-circle"></span>
+              <span class="shutter-text">
+                <strong id="shutter-main-label">Start photo strip</strong>
+                <small>or press Space</small>
+              </span>
+            </button>
+          </div>
+
+          <div class="capture-right-status">
+            <div class="ready-line">Ready when you are</div>
+            <div id="capture-progress-text" class="moments-sub">0 of 4 moments captured</div>
+          </div>
+        </footer>
       </div>
-      <div id="booth-hardware" class="booth-hardware" aria-label="Camera and printer settings">
-        <label id="label-camera-source" class="hidden">Camera
-          <select id="select-camera-source">
-            <option value="webcam">Capture Card / OBS Live Feed</option>
-            <option value="dslr" disabled>DSLR via digiCamControl</option>
-          </select>
-        </label>
-        <label>Format / Layout
-          <select id="select-booth-layout">
-            <option value="2x6_strip4">2x6 Strip (4 shots)</option>
-            <option value="photocard">2.16x3.4 Photocard (1 shot)</option>
-            <option value="mini_strip24x72">24x72mm Mini-Strip (4 shots)</option>
-            <option value="4x6_grid2x2">4x6 Grid 2x2 (4 shots)</option>
-            <option value="4x6_grid2x3">4x6 Grid 2x3 (6 shots)</option>
-          </select>
-        </label>
-        <label>Orientation &amp; Frame
-          <div style="display:flex;gap:4px">
-            <select id="select-booth-orientation" style="flex:1" title="Orientation">
-              <option value="auto">Auto (from fog canvas)</option>
+
+      <!-- Right Sidebar: "Picnic Prints" with Live Template Preview -->
+      <aside id="photo-tray" class="photo-tray" aria-label="Captured picnic photos">
+        <div class="tray-header">
+          <div>
+            <h2 class="tray-title">Picnic Prints</h2>
+            <span class="tray-subtitle">Good moments deserve a keepsake.</span>
+          </div>
+          <span style="font-size:1.2rem;opacity:0.75">🖼️</span>
+        </div>
+
+        <!-- Visual Template Preview Box -->
+        <div class="template-preview-stage" aria-label="Live template preview">
+          <div class="preview-stage-top">
+            <span id="preview-header-label">YOUR PHOTO STRIP</span>
+            <span id="preview-dim-label">2 × 6 in</span>
+          </div>
+          <div id="template-card-visual" class="template-paper-card">
+            <img id="template-card-overlay" class="template-card-overlay" alt="Template frame" style="display:none;" />
+            <div id="template-slots-grid" class="template-slots-grid">
+              <div class="template-slot active-next">📷</div>
+              <div class="template-slot">02</div>
+              <div class="template-slot">03</div>
+              <div class="template-slot">04</div>
+            </div>
+            <div class="template-card-footer">
+              <span class="script-brand">Picnic Prints</span>
+              <span id="template-footer-sub" class="micro-tag">A LITTLE MOMENT, FOREVER</span>
+            </div>
+          </div>
+          <p id="preview-stage-caption" class="preview-stage-caption">Your four poses will appear here.</p>
+        </div>
+
+        <div id="booth-hardware" class="booth-hardware" aria-label="Camera and printer settings">
+          <label id="label-camera-source" class="hidden">Camera
+            <select id="select-camera-source">
+              <option value="webcam">Capture Card / OBS Live Feed</option>
+              <option value="dslr" disabled>DSLR via digiCamControl</option>
+            </select>
+          </label>
+
+          <div>
+            <div class="control-row-header">
+              <span>Layout</span>
+              <span id="layout-shots-label" class="sub-val">4 photos</span>
+            </div>
+            <div id="layout-buttons-group" class="layout-segmented" role="group" aria-label="Layout selection">
+              <button type="button" class="seg-btn active" data-layout-quick="2x6_strip4">
+                <span>🎞️</span> Classic strip
+              </button>
+              <button type="button" class="seg-btn" data-layout-quick="4x6_grid2x2">
+                <span>📇</span> Postcard
+              </button>
+              <button type="button" class="seg-btn" data-layout-quick="photocard">
+                <span>🃏</span> Photocard
+              </button>
+              <button type="button" class="seg-btn" data-layout-quick="mini_strip24x72">
+                <span>✂️</span> Mini strip
+              </button>
+              <button type="button" class="seg-btn" data-layout-quick="4x6_grid2x3" style="grid-column:span 2">
+                <span>▦</span> 2×3 Grid (6 poses)
+              </button>
+            </div>
+            <select id="select-booth-layout" class="sr-only" title="Print format and layout">
+              <option value="2x6_strip4">2x6 Strip (4 shots)</option>
+              <option value="photocard">55x85mm Photocard (1 shot)</option>
+              <option value="mini_strip24x72">24x72mm Mini-Strip (4 shots)</option>
+              <option value="4x6_grid2x2">4x6 Grid 2x2 (4 shots)</option>
+              <option value="4x6_grid2x3">4x6 Grid 2x3 (6 shots)</option>
+            </select>
+          </div>
+
+          <div class="control-field">
+            <div class="control-row-header">
+              <span>Orientation</span>
+              <span id="orientation-label-sub" class="sub-val">Auto orientation</span>
+            </div>
+            <select id="select-booth-orientation" title="Orientation">
+              <option value="auto">Auto orientation</option>
               <option value="portrait">Portrait</option>
               <option value="landscape">Landscape</option>
             </select>
-            <select id="select-booth-template" style="flex:1" title="Frame template">
+          </div>
+
+          <div class="control-field">
+            <div class="control-row-header">
+              <span>Frame Template</span>
+              <span id="frame-template-name" class="sub-val">Auto template</span>
+            </div>
+            <select id="select-booth-template" title="Frame template">
               <option value="auto">Auto template</option>
               <option value="none">Plain white</option>
             </select>
-            <input id="input-booth-copies" type="number" min="1" max="10" value="1" title="Copies to print" style="width:46px;font:inherit;padding:4px;border-radius:8px" />
           </div>
-        </label>
-        <label class="hidden">Direct Paper
-          <select id="select-paper-size" disabled>
-            <option value="">IrfanView not available</option>
-          </select>
-        </label>
-        <label class="booth-check hidden"><input id="chk-auto-print" type="checkbox" disabled> Auto-print after capture</label>
-        <span id="hardware-status" class="tray-subtitle">Checking hardware…</span>
-        <button id="btn-make-gif" type="button" class="btn btn-amber" disabled title="Take at least 2 photos to compile a GIF">
-          🎞️ Make GIF &amp; QR
-        </button>
-      </div>
-      <div id="tray-warning" class="tray-warning hidden">
-        Tray full (8/8). Capturing a new photo will remove the oldest print.
-      </div>
-      <div id="photo-list" class="photo-list">
-        <p class="empty-tray-msg">No photos yet. Fog the glass and press <strong>Photo</strong>!</p>
-      </div>
-    </aside>
 
-    <footer class="bottom-toolbar" role="toolbar" aria-label="Glass drawing and capture controls">
-      <p id="gesture-status" role="status" style="flex-basis:100%;font-size:.78rem;color:var(--fog-color)">Show an open palm to erase · point to guide · beak to feed</p>
-      <div class="tool-group" role="radiogroup" aria-label="Active glass tool">
-        <button type="button" class="btn tool-btn active" data-tool="write" role="radio" aria-checked="true">
-          ☝️ Write
-        </button>
-        <button type="button" class="btn tool-btn" data-tool="wipe" role="radio" aria-checked="false">
-          🖐️ Palm Wipe
-        </button>
-        <button type="button" class="btn tool-btn" data-tool="play" role="radio" aria-checked="false">
-          🦋 Play
-        </button>
-      </div>
+          <div class="copies-row">
+            <div>
+              <div style="color:var(--text-cream);font-weight:600">Print copies</div>
+              <div style="font-size:0.68rem;color:var(--text-muted)">One for you, one for a friend</div>
+            </div>
+            <div class="copies-stepper">
+              <button type="button" id="btn-copies-dec" class="step-btn" aria-label="Decrease copies">−</button>
+              <input id="input-booth-copies" type="number" min="1" max="10" value="2" title="Copies to print" />
+              <button type="button" id="btn-copies-inc" class="step-btn" aria-label="Increase copies">+</button>
+            </div>
+          </div>
 
-      <div class="capture-cluster">
-        <button id="btn-fog-pulse" type="button" class="btn" title="Breathe a burst of fog onto the glass (or hold F)">💨 Fog Glass</button>
-        <button id="btn-feed-fish" type="button" class="btn" title="Drop a portion near the center of the pond">Drop fish food</button>
-        <button id="btn-photo" type="button" class="btn btn-amber btn-capture" title="Start 3-second photo countdown (Space)">
-          📸 Photo
-        </button>
-      </div>
-    </footer>
+          <label class="hidden">Direct Paper
+            <select id="select-paper-size" disabled>
+              <option value="">IrfanView not available</option>
+            </select>
+          </label>
+          <label class="booth-check hidden"><input id="chk-auto-print" type="checkbox" disabled> Auto-print after capture</label>
+
+          <button id="btn-download-strip" type="button" class="btn-print-main">
+            🖨️ Print photo strip
+          </button>
+          <div class="print-sub-notes">
+            <p id="print-status-note" class="print-sub-note">Capture your 4 moments to unlock printing.</p>
+            <p class="print-sub-note"><span style="opacity:0.8">⬇</span> A digital copy is yours to keep, too.</p>
+          </div>
+          <button id="btn-make-gif" type="button" class="btn btn-secondary btn-compact" disabled title="Take at least 2 photos to compile a GIF" style="width:100%;margin-top:2px">
+            🎞️ Make GIF &amp; QR
+          </button>
+          <span id="hardware-status" class="tray-subtitle" style="text-align:center;font-size:0.68rem;opacity:0.7">Checking hardware…</span>
+        </div>
+
+        <div id="tray-warning" class="tray-warning hidden">
+          Tray full (8/8). Capturing a new photo will remove the oldest print.
+        </div>
+        <div id="photo-list" class="photo-list">
+          <p class="empty-tray-msg">No photos yet. Fog the glass and press <strong>Start photo strip</strong>!</p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Bottom Studio Footer -->
+    <div class="studio-footer-bar">
+      <span>
+        A little space to be yourself. Your camera stays on this device. ·
+        <a href="https://poly.pizza/m/2ZwYwkTVnfG" target="_blank" rel="noopener noreferrer">Butterfly</a> by <a href="https://poly.pizza/u/Poly%20by%20Google" target="_blank" rel="noopener noreferrer">Poly by Google</a> [<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC-BY</a>] via Poly Pizza ·
+        <a href="https://poly.pizza/m/0Wt0Mc31Qsj" target="_blank" rel="noopener noreferrer">butterfly</a> by <a href="https://poly.pizza/u/Hugo%20Gibson" target="_blank" rel="noopener noreferrer">Hugo Gibson</a> ·
+        <a href="https://poly.pizza/m/fv6J8XW4hvC" target="_blank" rel="noopener noreferrer">Butterfly</a> by <a href="https://poly.pizza/u/sirkitree" target="_blank" rel="noopener noreferrer">sirkitree</a>
+      </span>
+      <span>MADE FOR THE MOMENT / PICNIC GLASS STUDIO</span>
+    </div>
   </div>
 
   <script type="module">
     import { evaluateHandPose, GestureGate, OneEuroPointFilter } from './js/input/hand-gestures.js';
     import { PondSimulation } from './js/scenes/pond.js';
     import { FishRenderer } from './js/scenes/fish-renderer.js';
+    import { CreatureRenderer } from './js/scenes/creature-renderer.js';
     import { encodeGif } from './js/gif-encoder.js';
     function computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight) {
       if (!videoWidth || !videoHeight || !stageWidth || !stageHeight) return { scale: 1, offsetX: 0, offsetY: 0 };
@@ -291,12 +880,34 @@
       return { scale, offsetX, offsetY };
     }
 
-    function mapNormalizedToStage(normX, normY, videoWidth, videoHeight, stageWidth, stageHeight, mirror = true) {
-      const { scale, offsetX, offsetY } = computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight);
-      const effectiveNormX = mirror ? (1 - normX) : normX;
+    function mapNormalizedToStage(normX, normY, videoWidth, videoHeight, stageWidth, stageHeight, mirror = true, angleRad = 0) {
+      if (!angleRad) {
+        const { scale, offsetX, offsetY } = computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight);
+        const effectiveNormX = mirror ? (1 - normX) : normX;
+        return {
+          x: Math.max(0, Math.min(stageWidth, effectiveNormX * videoWidth * scale + offsetX)),
+          y: Math.max(0, Math.min(stageHeight, normY * videoHeight * scale + offsetY))
+        };
+      }
+      const isRotated = angleRad !== 0;
+      const effW = isRotated ? videoHeight : videoWidth;
+      const effH = isRotated ? videoWidth : videoHeight;
+      const { scale } = computeCoverTransform(effW, effH, stageWidth, stageHeight);
+
+      const px = (normX - 0.5) * videoWidth * scale;
+      const py = (normY - 0.5) * videoHeight * scale;
+
+      const cos = Math.cos(angleRad);
+      const sin = Math.sin(angleRad);
+      const rx = px * cos - py * sin;
+      const ry = px * sin + py * cos;
+
+      const mx = mirror ? -rx : rx;
+      const my = ry;
+
       return {
-        x: Math.max(0, Math.min(stageWidth, effectiveNormX * videoWidth * scale + offsetX)),
-        y: Math.max(0, Math.min(stageHeight, normY * videoHeight * scale + offsetY))
+        x: Math.max(0, Math.min(stageWidth, stageWidth * 0.5 + mx)),
+        y: Math.max(0, Math.min(stageHeight, stageHeight * 0.5 + my))
       };
     }
 
@@ -537,25 +1148,81 @@
         this.width = width; this.height = height;
         this.currentScene = 'meadow';
         this.paused = false;
+        this.time = 0;
+
+        this.seeds = Array.from({ length: 18 }, () => ({
+          x: Math.random() * width, y: Math.random() * height,
+          vx: 16 + Math.random() * 22, vy: -8 - Math.random() * 14,
+          size: 2.8 + Math.random() * 2.2, phase: Math.random() * Math.PI * 2
+        }));
+
+        const petalColors = ['#FFB7C5', '#FFC8D6', '#FFE4EC', '#F99DB0'];
+        this.petals = Array.from({ length: 26 }, (_, i) => ({
+          x: Math.random() * width, y: Math.random() * height,
+          vx: 24 + Math.random() * 28, vy: 22 + Math.random() * 26,
+          rx: 5 + Math.random() * 4.5, ry: 3.2 + Math.random() * 2.5,
+          angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 2.4,
+          swayPhase: Math.random() * Math.PI * 2,
+          color: petalColors[i % petalColors.length]
+        }));
+
+        const butterflyColors = ['#F2B544', '#FF8FA3', '#7FC8C2', '#F7D070', '#E63946'];
+        this.butterflies = Array.from({ length: 8 }, (_, i) => ({
+          x: Math.random() * width, y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 85, vy: (Math.random() - 0.5) * 65,
+          wingPhase: Math.random() * Math.PI * 2,
+          scale: 0.85 + (i % 3) * 0.18,
+          color: butterflyColors[i % butterflyColors.length]
+        }));
+
+        this.daisies = Array.from({ length: 12 }, () => ({
+          x: Math.random() * width, y: Math.random() * height,
+          vx: 12 + Math.random() * 18, vy: 14 + Math.random() * 18,
+          r: 5 + Math.random() * 3.5, rot: Math.random() * Math.PI * 2, vrot: (Math.random() - 0.5) * 1.2
+        }));
+
+        this.dappledLeaves = Array.from({ length: 14 }, (_, i) => ({
+          x: Math.random() * width, y: Math.random() * height,
+          r: 28 + (i % 5) * 14, phase: Math.random() * Math.PI * 2,
+          driftX: (Math.random() - 0.5) * 12, driftY: (Math.random() - 0.5) * 8
+        }));
+
         this.fireflies = Array.from({ length: 22 }, () => ({
           x: Math.random() * width, y: Math.random() * height, vx: (Math.random() - 0.5) * 45, vy: (Math.random() - 0.5) * 45, phase: Math.random() * Math.PI * 2
-        }));
-        this.seeds = Array.from({ length: 16 }, () => ({
-          x: Math.random() * width, y: Math.random() * height, vx: 18 + Math.random() * 20, vy: -10 - Math.random() * 15
         }));
 
         this.pond = new PondSimulation();
         this.fishRenderer = new FishRenderer(window.THREE, width, height, this.pond.fish);
+        this.creatureRenderer = typeof CreatureRenderer !== 'undefined'
+          ? new CreatureRenderer(window.THREE, width, height)
+          : null;
       }
       resize(width, height) {
+        const sx = this.width > 0 ? width / this.width : 1;
+        const sy = this.height > 0 ? height / this.height : 1;
         this.width = width; this.height = height;
+        for (const list of [this.seeds, this.petals, this.butterflies, this.daisies, this.dappledLeaves, this.fireflies]) {
+          for (const item of list) { item.x *= sx; item.y *= sy; }
+        }
         this.fishRenderer.resize(width, height);
+        this.creatureRenderer?.resize(width, height);
       }
-      setScene(sceneId) { this.currentScene = sceneId; }
+      setScene(sceneId) {
+        this.currentScene = sceneId;
+        this.creatureRenderer?.onSceneChanged(sceneId);
+      }
       renderDemoBackground(ctx) {
         const w = this.width, h = this.height;
         const grad = ctx.createLinearGradient(0, 0, 0, h);
-        if (this.currentScene === 'fireflies') {
+        if (this.currentScene === 'blossoms') {
+          grad.addColorStop(0, '#F7D1CD'); grad.addColorStop(0.55, '#F9E5D8'); grad.addColorStop(1, '#98C9A3');
+        } else if (this.currentScene === 'butterflies') {
+          grad.addColorStop(0, '#8ED8D2'); grad.addColorStop(0.6, '#D9F0C7'); grad.addColorStop(1, '#85B86C');
+        } else if (this.currentScene === 'gingham') {
+          grad.addColorStop(0, '#F5C37E'); grad.addColorStop(0.58, '#F9DFB0'); grad.addColorStop(1, '#A3BE7B');
+        } else if (this.currentScene === 'shade') {
+          grad.addColorStop(0, '#6CA98F'); grad.addColorStop(0.6, '#A9D6AD'); grad.addColorStop(1, '#5D9361');
+        } else if (this.currentScene === 'fireflies') {
           grad.addColorStop(0, '#16262E'); grad.addColorStop(1, '#28433A');
         } else if (this.currentScene === 'aquarium') {
           grad.addColorStop(0, '#24585f'); grad.addColorStop(.5, '#4d9995'); grad.addColorStop(1, '#9ac3a7');
@@ -566,13 +1233,218 @@
       }
       renderScene(ctx, dtSec, playTarget = null) {
         const dt = this.paused ? 0 : Math.min(0.1, Math.max(0, dtSec));
+        this.time += dt;
         const w = this.width, h = this.height;
+        const targetPx = playTarget
+          ? { x: playTarget.x <= 1.5 ? playTarget.x * w : playTarget.x, y: playTarget.y <= 1.5 ? playTarget.y * h : playTarget.y }
+          : null;
 
         if (this.currentScene === 'meadow') {
-          ctx.fillStyle = 'rgba(244, 248, 249, 0.75)';
+          // Warm golden picnic sunbeam in upper-right corner
+          const sun = ctx.createRadialGradient(w * 0.84, h * 0.14, 8, w * 0.84, h * 0.14, Math.max(w, h) * 0.58);
+          sun.addColorStop(0, 'rgba(255, 224, 130, 0.24)');
+          sun.addColorStop(0.5, 'rgba(242, 181, 68, 0.09)');
+          sun.addColorStop(1, 'rgba(242, 181, 68, 0)');
+          ctx.fillStyle = sun; ctx.fillRect(0, 0, w, h);
+
+          // Floating dandelion fluff seeds
           for (const s of this.seeds) {
-            s.x = (s.x + s.vx * dt + w) % w; s.y = (s.y + s.vy * dt + h) % h;
-            ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, Math.PI * 2); ctx.fill();
+            s.phase += dt * 1.8;
+            s.x = (s.x + (s.vx + Math.sin(s.phase) * 8) * dt + w) % w;
+            s.y = (s.y + s.vy * dt + h) % h;
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(Math.sin(s.phase) * 0.25);
+            ctx.strokeStyle = 'rgba(244, 248, 249, 0.72)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(0, s.size * 2.2);
+            for (const a of [-0.6, -0.3, 0, 0.3, 0.6]) {
+              ctx.moveTo(0, 0);
+              ctx.lineTo(Math.sin(a) * s.size * 1.9, -Math.cos(a) * s.size * 1.9);
+            }
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255, 250, 235, 0.88)';
+            ctx.beginPath(); ctx.arc(0, 0, s.size * 0.55, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+          }
+        } else if (this.currentScene === 'blossoms') {
+          // Soft spring rose-gold sunlight wash
+          const wash = ctx.createLinearGradient(0, 0, w, h);
+          wash.addColorStop(0, 'rgba(255, 196, 212, 0.14)');
+          wash.addColorStop(0.5, 'rgba(255, 235, 215, 0.06)');
+          wash.addColorStop(1, 'rgba(242, 181, 68, 0.10)');
+          ctx.fillStyle = wash; ctx.fillRect(0, 0, w, h);
+
+          for (const p of this.petals) {
+            p.swayPhase += dt * 2.2;
+            p.angle += p.spin * dt;
+            let vx = p.vx + Math.sin(p.swayPhase) * 18;
+            let vy = p.vy + Math.cos(p.swayPhase * 0.8) * 6;
+            if (targetPx && dt > 0) {
+              const dx = p.x - targetPx.x, dy = p.y - targetPx.y;
+              const d = Math.hypot(dx, dy);
+              if (d > 1 && d < 150) {
+                vx += (dx / d) * 65; vy += (dy / d) * 45;
+              }
+            }
+            p.x = (p.x + vx * dt + w) % w;
+            p.y = (p.y + vy * dt + h) % h;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.85;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.rx, p.ry, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Subtle petal highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
+            ctx.beginPath();
+            ctx.ellipse(-p.rx * 0.2, -p.ry * 0.2, p.rx * 0.45, p.ry * 0.38, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        } else if (this.currentScene === 'butterflies') {
+          // Warm meadow sunbeam
+          const sun = ctx.createRadialGradient(w * 0.2, h * 0.15, 10, w * 0.2, h * 0.15, Math.max(w, h) * 0.55);
+          sun.addColorStop(0, 'rgba(255, 228, 145, 0.22)');
+          sun.addColorStop(1, 'rgba(255, 228, 145, 0)');
+          ctx.fillStyle = sun; ctx.fillRect(0, 0, w, h);
+
+          // Drifting wildflower daisies
+          for (const d of this.daisies) {
+            d.x = (d.x + d.vx * dt + w) % w;
+            d.y = (d.y + d.vy * dt + h) % h;
+            d.rot += d.vrot * dt;
+            ctx.save();
+            ctx.translate(d.x, d.y);
+            ctx.rotate(d.rot);
+            ctx.fillStyle = 'rgba(255, 253, 245, 0.88)';
+            for (let k = 0; k < 6; k++) {
+              ctx.save();
+              ctx.rotate((k * Math.PI) / 3);
+              ctx.beginPath();
+              ctx.ellipse(d.r * 0.85, 0, d.r * 0.65, d.r * 0.34, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+            ctx.fillStyle = '#F2B544';
+            ctx.beginPath(); ctx.arc(0, 0, d.r * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+          }
+
+          // Diverse 3D / 2D picnic creatures (butterflies, bees, hummingbirds, birds with randomized personalities)
+          if (this.creatureRenderer) {
+            this.creatureRenderer.render(ctx, dt, playTarget);
+          } else {
+            for (const b of this.butterflies) {
+              if (targetPx && dt > 0) {
+                const dx = targetPx.x - b.x, dy = targetPx.y - b.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 55 && dist < 440) {
+                  b.vx += ((dx / dist) * 115 - b.vx) * 2.8 * dt;
+                  b.vy += ((dy / dist) * 115 - b.vy) * 2.8 * dt;
+                } else if (dist <= 55 && dist > 1) {
+                  b.vx += (-dy / dist) * 70 * dt;
+                  b.vy += (dx / dist) * 70 * dt;
+                }
+              }
+              b.x += b.vx * dt; b.y += b.vy * dt;
+              b.wingPhase += dt * 11;
+              if (b.x < 28 || b.x > w - 28) b.vx *= -1;
+              if (b.y < 28 || b.y > h - 28) b.vy *= -1;
+              b.x = Math.max(20, Math.min(w - 20, b.x));
+              b.y = Math.max(20, Math.min(h - 20, b.y));
+              const angle = Math.atan2(b.vy, b.vx);
+
+              ctx.save();
+              ctx.translate(b.x, b.y);
+              ctx.rotate(angle);
+              ctx.scale(b.scale, b.scale);
+              const spread = 8 + Math.sin(b.wingPhase) * 5.5;
+              ctx.fillStyle = b.color;
+              ctx.globalAlpha = 0.88;
+              ctx.beginPath();
+              ctx.ellipse(2, -spread * 0.58, 10, spread * 0.82, 0.2, 0, Math.PI * 2);
+              ctx.ellipse(2, spread * 0.58, 10, spread * 0.82, -0.2, 0, Math.PI * 2);
+              ctx.ellipse(-6, -spread * 0.42, 7, spread * 0.6, -0.15, 0, Math.PI * 2);
+              ctx.ellipse(-6, spread * 0.42, 7, spread * 0.6, 0.15, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = '#1F3038';
+              ctx.beginPath(); ctx.ellipse(0, 0, 8, 1.8, 0, 0, Math.PI * 2); ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else if (this.currentScene === 'gingham') {
+          // Warm Golden Hour honey-amber glow + berry light leak
+          const glow = ctx.createLinearGradient(0, 0, w, h);
+          glow.addColorStop(0, 'rgba(242, 181, 68, 0.18)');
+          glow.addColorStop(0.55, 'rgba(255, 210, 145, 0.08)');
+          glow.addColorStop(1, 'rgba(230, 57, 70, 0.14)');
+          ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
+
+          // Cozy picnic gingham border trim along top & bottom edges
+          const band = Math.max(18, Math.round(Math.min(w, h) * 0.042));
+          const cell = Math.max(12, Math.round(band * 0.65));
+          ctx.save();
+          for (const yBase of [0, h - band]) {
+            ctx.fillStyle = 'rgba(255, 248, 238, 0.52)';
+            ctx.fillRect(0, yBase, w, band);
+            for (let x = 0; x < w; x += cell) {
+              const colEven = Math.floor(x / cell) % 2 === 0;
+              if (colEven) {
+                ctx.fillStyle = 'rgba(224, 72, 82, 0.34)';
+                ctx.fillRect(x, yBase, cell, band);
+              }
+              ctx.fillStyle = 'rgba(224, 72, 82, 0.30)';
+              ctx.fillRect(x, yBase, cell, Math.round(band * 0.5));
+            }
+          }
+          ctx.restore();
+
+          // Warm golden pollen motes
+          for (const s of this.seeds) {
+            s.phase += dt * 2.2;
+            s.x = (s.x + s.vx * 0.7 * dt + w) % w;
+            s.y = (s.y + s.vy * 0.6 * dt + h) % h;
+            const alpha = 0.35 + 0.35 * Math.sin(s.phase);
+            const r = s.size * 4.5;
+            const rad = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, r);
+            rad.addColorStop(0, `rgba(255, 230, 150, ${alpha})`);
+            rad.addColorStop(1, 'rgba(242, 181, 68, 0)');
+            ctx.fillStyle = rad;
+            ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI * 2); ctx.fill();
+          }
+        } else if (this.currentScene === 'shade') {
+          // Dappled tree canopy sunlight beams & swaying leaf bokeh
+          ctx.save();
+          const beamGrad = ctx.createLinearGradient(0, 0, w * 0.7, h);
+          beamGrad.addColorStop(0, 'rgba(215, 245, 175, 0.18)');
+          beamGrad.addColorStop(0.6, 'rgba(127, 200, 194, 0.06)');
+          beamGrad.addColorStop(1, 'rgba(31, 48, 56, 0.12)');
+          ctx.fillStyle = beamGrad;
+          ctx.fillRect(0, 0, w, h);
+
+          for (const lf of this.dappledLeaves) {
+            lf.phase += dt * 1.3;
+            const lx = (lf.x + Math.sin(lf.phase) * 18 + w) % w;
+            const ly = (lf.y + Math.cos(lf.phase * 0.8) * 10 + h) % h;
+            const g = ctx.createRadialGradient(lx, ly, 2, lx, ly, lf.r);
+            g.addColorStop(0, 'rgba(235, 252, 195, 0.22)');
+            g.addColorStop(1, 'rgba(235, 252, 195, 0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(lx, ly, lf.r, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.restore();
+
+          // Floating meadow fluff in the shade
+          ctx.fillStyle = 'rgba(244, 248, 249, 0.72)';
+          for (const s of this.seeds) {
+            s.x = (s.x + s.vx * 0.8 * dt + w) % w;
+            s.y = (s.y + s.vy * 0.8 * dt + h) % h;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.size * 0.9, 0, Math.PI * 2); ctx.fill();
           }
         } else if (this.currentScene === 'aquarium') {
           this.pond.step(dt, playTarget);
@@ -591,7 +1463,11 @@
     }
 
     class PhotoTrayManager {
-      constructor(maxPhotos = 8) { this.maxPhotos = maxPhotos; this.photos = []; }
+      constructor(maxPhotos = 8) {
+        this.maxPhotos = maxPhotos;
+        this.photos = [];
+        this.paperColor = '#F6EFE6';
+      }
       isFull() { return this.photos.length >= this.maxPhotos; }
       async captureFramedBlob(stageCanvas, includeDate = true) {
         const pad = 28, bottomPad = 78;
@@ -599,18 +1475,21 @@
         exportCanvas.width = stageCanvas.width + pad * 2;
         exportCanvas.height = stageCanvas.height + pad + bottomPad;
         const ctx = exportCanvas.getContext('2d');
-        ctx.fillStyle = '#F4F8F9'; ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-        ctx.fillStyle = '#7FC8C2'; ctx.fillRect(pad, exportCanvas.height - bottomPad + 6, stageCanvas.width, 3);
+        const bg = this.paperColor || '#F6EFE6';
+        const isDark = bg === '#28363D';
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        ctx.fillStyle = '#D94E3B'; ctx.fillRect(pad, exportCanvas.height - bottomPad + 6, stageCanvas.width, 3);
         ctx.drawImage(stageCanvas, pad, pad);
         if (includeDate) {
           const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-          ctx.fillStyle = '#1F3038'; ctx.font = 'bold 30px Caveat, cursive'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+          ctx.fillStyle = isDark ? '#F6EFE6' : '#3A251B';
+          ctx.font = 'bold 30px Caveat, cursive'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
           ctx.fillText(`Picnic Glass • ${dateStr}`, exportCanvas.width - pad - 6, exportCanvas.height - bottomPad * 0.45);
         }
         return new Promise((resolve) => {
           exportCanvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
-            const item = { id: `picnic-${Date.now()}`, url, blob, createdAt: new Date() };
+            const item = { id: `picnic-${Date.now()}`, url, blob, createdAt: new Date(), width: stageCanvas.width, height: stageCanvas.height };
             if (this.photos.length >= this.maxPhotos) { const evicted = this.photos.shift(); URL.revokeObjectURL(evicted.url); }
             this.photos.push(item);
             resolve({ item });
@@ -780,14 +1659,28 @@
         btnPause.addEventListener('click', () => {
           this.sceneManager.paused = !this.sceneManager.paused;
           btnPause.setAttribute('aria-pressed', String(this.sceneManager.paused));
-          btnPause.textContent = this.sceneManager.paused ? 'Resume Motion' : 'Pause Motion';
+          btnPause.textContent = this.sceneManager.paused ? '▶ Resume' : '⏸ Pause';
+          const motionLbl = document.getElementById('scene-motion-label');
+          if (motionLbl) motionLbl.textContent = this.sceneManager.paused ? 'Scene is paused' : 'Scene is moving';
         });
+
+        const btnRemix = document.getElementById('btn-remix-critters');
+        if (btnRemix) {
+          btnRemix.addEventListener('click', () => {
+            this.sceneManager.creatureRenderer?.randomizeRoster();
+            this.showToast('Butterflies remixed!');
+          });
+        }
 
         document.getElementById('btn-toggle-tray').addEventListener('click', (e) => {
           const tray = document.getElementById('photo-tray');
-          const hidden = tray.classList.toggle('hidden');
-          e.currentTarget.setAttribute('aria-expanded', String(!hidden));
-          this.handleResize();
+          const list = document.getElementById('photo-list');
+          if (window.innerWidth <= 900 && tray) {
+            tray.scrollIntoView({ behavior: 'smooth' });
+          } else if (list) {
+            list.scrollIntoView({ behavior: 'smooth' });
+          }
+          e.currentTarget.setAttribute('aria-expanded', 'true');
         });
         document.getElementById('btn-help').addEventListener('click', () => {
           document.getElementById('intro-overlay').classList.remove('hidden');
@@ -802,8 +1695,66 @@
           btnFog.addEventListener('pointerdown', () => { this.fogKeyHeld = true; this.triggerFogPulse(); });
           window.addEventListener('pointerup', () => { this.fogKeyHeld = false; });
         }
+        document.getElementById('stage-fog-pill')?.addEventListener('click', () => {
+          this.triggerFogPulse();
+        });
+        document.getElementById('btn-reset-glass')?.addEventListener('click', () => {
+          this.fogEngine.mask.fill(0);
+          this.fogEngine.drips = [];
+          this.fogEngine.dirty = true;
+          this.updateFogPercentUI();
+          this.showToast('Glass cleared!');
+        });
+        document.getElementById('btn-mirror-stage')?.addEventListener('click', () => {
+          this.mirrorCamera = this.mirrorCamera === false ? true : false;
+          this.showToast(this.mirrorCamera ? '🪞 Camera mirrored' : '📷 Normal view (unmirrored)');
+        });
+        document.getElementById('btn-fullscreen-stage')?.addEventListener('click', () => {
+          const stg = document.getElementById('stage-container');
+          if (!document.fullscreenElement) stg?.requestFullscreen?.().catch(() => {});
+          else document.exitFullscreen?.().catch(() => {});
+        });
+        document.getElementById('select-countdown-timer')?.addEventListener('change', (e) => {
+          const val = e.target.value;
+          const sub = document.getElementById('capture-story-sub');
+          if (sub) {
+            sub.textContent = val === '0' ? 'Instant capture when you press Space' : `A ${val}-second countdown before every shot`;
+          }
+        });
 
-        document.getElementById('btn-feed-fish').addEventListener('click', () => {
+        // Layout segmented buttons synced with #select-booth-layout
+        const bindLayoutButtons = () => {
+          document.querySelectorAll('[data-layout-quick]').forEach((btn) => {
+            btn.onclick = () => {
+              const layoutSel = document.getElementById('select-booth-layout');
+              if (layoutSel) {
+                layoutSel.value = btn.dataset.layoutQuick;
+                layoutSel.dispatchEvent(new Event('change'));
+              }
+            };
+          });
+        };
+        bindLayoutButtons();
+        this.bindLayoutButtons = bindLayoutButtons;
+
+        // Copies +/- stepper
+        const copiesInp = document.getElementById('input-booth-copies');
+        document.getElementById('btn-copies-dec')?.addEventListener('click', () => {
+          if (!copiesInp) return;
+          copiesInp.value = String(Math.max(1, (parseInt(copiesInp.value, 10) || 1) - 1));
+          copiesInp.dispatchEvent(new Event('change'));
+        });
+        document.getElementById('btn-copies-inc')?.addEventListener('click', () => {
+          if (!copiesInp) return;
+          copiesInp.value = String(Math.min(10, (parseInt(copiesInp.value, 10) || 1) + 1));
+          copiesInp.dispatchEvent(new Event('change'));
+        });
+
+        document.getElementById('btn-download-strip')?.addEventListener('click', () => {
+          this.downloadCompositeStrip();
+        });
+
+        document.getElementById('btn-feed-fish')?.addEventListener('click', () => {
           if (this.countdownActive || this.sceneManager.paused) return;
           if (this.sceneManager.currentScene !== 'aquarium') {
             document.getElementById('select-scene').value = 'aquarium';
@@ -819,7 +1770,10 @@
         window.addEventListener('pagehide', event => {
           this.videoEl.srcObject?.getTracks().forEach(track => track.stop());
           this.cameraActive = false; this.pondHand = null;
-          if (!event.persisted) this.sceneManager.fishRenderer.dispose();
+          if (!event.persisted) {
+            this.sceneManager.fishRenderer?.dispose();
+            this.sceneManager.creatureRenderer?.dispose();
+          }
         });
         document.getElementById('btn-photo').addEventListener('click', () => this.startCountdown());
         document.getElementById('btn-make-gif').addEventListener('click', () => this.makeGifAndShowQr());
@@ -847,6 +1801,9 @@
             e.preventDefault(); this.startCountdown();
           } else if (e.key === 'f' || e.key === 'F') {
             this.fogKeyHeld = true; this.triggerFogPulse();
+          } else if (e.key === 'r' || e.key === 'R') {
+            this.sceneManager.creatureRenderer?.randomizeRoster();
+            this.showToast('Butterflies remixed!');
           }
         });
         window.addEventListener('keyup', (e) => {
@@ -860,6 +1817,24 @@
         this.lastFogPulseMs = now;
         const m = this.mouthSmoothPos || { x: this.stageCanvas.width * 0.5, y: this.stageCanvas.height * 0.52 };
         this.fogEngine.addBreath(m.x / Math.max(1, this.stageCanvas.width), m.y / Math.max(1, this.stageCanvas.height), 0.24, 1.75);
+        this.updateFogPercentUI();
+      }
+
+      updateFogPercentUI() {
+        const mask = this.fogEngine?.mask;
+        if (!mask || !mask.length) return;
+        let sum = 0;
+        const step = Math.max(1, Math.floor(mask.length / 400));
+        let samples = 0;
+        for (let i = 0; i < mask.length; i += step) {
+          sum += mask[i];
+          samples++;
+        }
+        const pct = Math.min(100, Math.max(0, Math.round((sum / Math.max(1, samples)) * 100)));
+        const el1 = document.getElementById('stage-fog-pct');
+        const el2 = document.getElementById('glass-fog-pct');
+        if (el1) el1.textContent = `${pct}%`;
+        if (el2) el2.textContent = `${pct}%`;
       }
 
       selectTool(toolName) {
@@ -879,10 +1854,12 @@
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
           this.videoEl.srcObject = stream; await this.videoEl.play();
           this.cameraActive = true;
+          const liveBadge = document.getElementById('stage-live-text');
+          if (liveBadge) liveBadge.textContent = 'LIVE CAMERA';
           document.getElementById('btn-retry-camera').classList.add('hidden');
           const res = await this.tracker.init();
           if (res.ready) {
-            this.updateStatus('Camera & Tracking Ready', 'ready');
+            this.updateStatus('Camera connected', 'ready');
             this.showToast('Make an "O" mouth to fog, point index to write, or hold an open palm forward to wipe!');
           } else {
             this.updateStatus('Camera Ready (Pointer Mode)', 'warn');
@@ -899,36 +1876,41 @@
         this.gestureGate.reset();
         if (this.videoEl.srcObject) { this.videoEl.srcObject.getTracks().forEach((t) => t.stop()); this.videoEl.srcObject = null; }
         this.cameraActive = false;
+        const liveBadge = document.getElementById('stage-live-text');
+        if (liveBadge) liveBadge.textContent = 'DEMO SCENE';
         document.getElementById('intro-overlay').classList.add('hidden');
         this.updateStatus('Picnic Demo Mode', 'ready');
       }
 
-      /** Returns the exact width/height aspect ratio of a single photo slot for the active print format. */
+      /** Returns the exact width/height aspect ratio for the camera frame based on active format and orientation. */
       getSlotAspect() {
         const defaults = {
           '2x6_strip4':      { w: 484, h: 339 },
           'mini_strip24x72': { w: 484, h: 339 },
-          'photocard':       { w: 648, h: 1020 },
+          'photocard':       { w: 55, h: 85 },
           '4x6_grid2x2':     { w: 480, h: 680 },
           '4x6_grid2x3':     { w: 480, h: 480 }
         };
-        const layoutId = document.getElementById('select-booth-layout')?.value || '2x6_strip4';
-        const ori = document.getElementById('select-booth-orientation')?.value || 'auto';
+        const layoutId = typeof document !== 'undefined' ? (document.getElementById('select-booth-layout')?.value || '2x6_strip4') : '2x6_strip4';
+        const ori = typeof document !== 'undefined' ? (document.getElementById('select-booth-orientation')?.value || 'auto') : 'auto';
         const cfg = this.hardware?.status?.handoffInfo?.layouts?.find((l) => l.id === layoutId);
         const baseW = cfg?.slotW || defaults[layoutId]?.w || 484;
         const baseH = cfg?.slotH || defaults[layoutId]?.h || 339;
-        return ori === 'landscape' ? (baseH / baseW) : (baseW / baseH);
+        if (ori === 'portrait') return Math.min(baseW, baseH) / Math.max(baseW, baseH);
+        if (ori === 'landscape') return Math.max(baseW, baseH) / Math.min(baseW, baseH);
+        return baseW / baseH;
+      }
+
+      getOrientationAngle() {
+        return 0; // Live feed stays straight to the user
       }
 
       handleResize() {
         const stage = this.stageCanvas.parentElement;
-        stage.style.top = document.querySelector('.top-bar').offsetHeight + 'px';
-        stage.style.bottom = document.querySelector('.bottom-toolbar').offsetHeight + 'px';
+        if (!stage) return;
         const rect = stage.getBoundingClientRect();
-        const tray = document.getElementById('photo-tray');
-        const trayRight = (tray && !tray.classList.contains('hidden') && rect.width > 768) ? (tray.offsetWidth + 24) : 0;
-        const pad = 16;
-        const availW = Math.max(120, rect.width - trayRight - pad * 2);
+        const pad = 6;
+        const availW = Math.max(120, rect.width - pad * 2);
         const availH = Math.max(120, rect.height - pad * 2);
         const aspect = this.getSlotAspect();
 
@@ -954,6 +1936,293 @@
         this.sharpBuffer.width = w; this.sharpBuffer.height = h;
         this.fogBuffer.width = w; this.fogBuffer.height = h;
         this.sceneManager.resize(w, h);
+        this.updateStudioUI();
+      }
+
+      /** Updates the live Template Preview card, slot thumbnails, and capture bar copy to match current settings. */
+      updateStudioUI() {
+        const layoutId = document.getElementById('select-booth-layout')?.value || '2x6_strip4';
+        const ori = document.getElementById('select-booth-orientation')?.value || 'auto';
+        const tmpl = document.getElementById('select-booth-template')?.value || 'auto';
+
+        const metaMap = {
+          '2x6_strip4':      { shots: 4, cols: 1, header: 'YOUR PHOTO STRIP', dim: '2 × 6 in', mode: 'strip', btn: 'Start photo strip', slotAspect: 484 / 339 },
+          'mini_strip24x72': { shots: 4, cols: 1, header: 'MINI PHOTO STRIP', dim: '24 × 72 mm', mode: 'strip', btn: 'Start mini strip', slotAspect: 484 / 339 },
+          'photocard':       { shots: 1, cols: 1, header: 'YOUR PHOTOCARD',   dim: '55 × 85 mm',    mode: 'single', btn: 'Take photocard', slotAspect: 55 / 85 },
+          '4x6_grid2x2':     { shots: 4, cols: 2, header: 'YOUR 2×2 GRID',    dim: '4 × 6 in', mode: 'grid', btn: 'Start 4-pose grid', slotAspect: 480 / 680 },
+          '4x6_grid2x3':     { shots: 6, cols: 2, header: 'YOUR 2×3 GRID',    dim: '4 × 6 in', mode: 'grid', btn: 'Start 6-pose grid', slotAspect: 480 / 480 }
+        };
+        const meta = metaMap[layoutId] || metaMap['2x6_strip4'];
+        const photos = this.trayManager?.photos || [];
+        const captured = photos.length;
+
+        // Sync quick-toggle buttons
+        document.querySelectorAll('[data-layout-quick]').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.layoutQuick === layoutId);
+        });
+
+        const hdrEl = document.getElementById('preview-header-label');
+        const dimEl = document.getElementById('preview-dim-label');
+        const shotsEl = document.getElementById('layout-shots-label');
+        const storyEl = document.getElementById('capture-story-title');
+        const shutterEl = document.getElementById('shutter-main-label');
+        const progEl = document.getElementById('capture-progress-text');
+        const capEl = document.getElementById('preview-stage-caption');
+        const footerSubEl = document.getElementById('template-footer-sub');
+        const frameNameEl = document.getElementById('frame-template-name');
+        const tmplSelEl = document.getElementById('select-booth-template');
+
+        if (hdrEl) hdrEl.textContent = meta.header;
+        if (dimEl) dimEl.textContent = meta.dim;
+        if (shotsEl) shotsEl.textContent = `${meta.shots} ${meta.shots === 1 ? 'photo' : 'photos'}`;
+        if (storyEl) storyEl.textContent = `${meta.shots} ${meta.shots === 1 ? 'pose' : 'poses'}. One little story.`;
+        if (shutterEl) shutterEl.textContent = meta.btn;
+        if (progEl) progEl.textContent = `${Math.min(captured, meta.shots)} of ${meta.shots} moments captured`;
+        if (frameNameEl && tmplSelEl) {
+          const optText = tmplSelEl.options[tmplSelEl.selectedIndex]?.text || tmpl;
+          frameNameEl.textContent = optText;
+        }
+        const oriSubEl = document.getElementById('orientation-label-sub');
+        if (oriSubEl) {
+          oriSubEl.textContent = ori === 'portrait' ? 'Portrait' : (ori === 'landscape' ? 'Landscape' : 'Auto orientation');
+        }
+
+        const printBtn = document.getElementById('btn-download-strip');
+        const printNote = document.getElementById('print-status-note');
+        const readyToPrint = captured >= meta.shots;
+        if (printBtn) {
+          printBtn.classList.toggle('ready', readyToPrint);
+        }
+        if (printNote) {
+          printNote.textContent = readyToPrint
+            ? `All ${meta.shots} moments captured! Ready to print.`
+            : `Capture your ${meta.shots} ${meta.shots === 1 ? 'moment' : 'moments'} to unlock printing.`;
+        }
+
+        // Live visual overlay of the template frame if present
+        const overlayImg = document.getElementById('template-card-overlay');
+        if (overlayImg) {
+          let tplFile = null;
+          if (tmpl && tmpl !== 'none' && tmpl !== 'auto') {
+            tplFile = tmpl;
+          } else if (tmpl === 'auto') {
+            const lay = this.hardware?.status?.handoffInfo?.layouts?.find((l) => l.id === layoutId);
+            tplFile = lay?.templates?.find((t) => t && t !== 'none' && t !== 'auto') || null;
+          }
+          if (tplFile) {
+            overlayImg.src = `/api/template/image?layout=${encodeURIComponent(layoutId)}&name=${encodeURIComponent(tplFile)}`;
+            overlayImg.style.display = 'block';
+            overlayImg.onerror = () => { overlayImg.style.display = 'none'; };
+          } else {
+            overlayImg.style.display = 'none';
+          }
+        }
+        if (capEl) {
+          capEl.textContent = captured === 0
+            ? `Your ${meta.shots === 1 ? 'pose' : `${meta.shots} poses`} will appear here.`
+            : `${Math.min(captured, meta.shots)} of ${meta.shots} slots filled · ready to save or print.`;
+        }
+        if (footerSubEl) {
+          footerSubEl.textContent = tmpl && tmpl !== 'auto' && tmpl !== 'none'
+            ? tmpl.toUpperCase()
+            : 'A LITTLE MOMENT, FOREVER';
+        }
+
+        const cardEl = document.getElementById('template-card-visual');
+        const gridEl = document.getElementById('template-slots-grid');
+        if (cardEl && gridEl) {
+          const bg = this.trayManager?.paperColor || '#F6EFE6';
+          cardEl.style.background = bg;
+          cardEl.style.color = '#3A251B';
+          cardEl.classList.toggle('grid-mode', meta.mode === 'grid');
+          cardEl.classList.toggle('single-mode', meta.mode === 'single');
+
+          gridEl.style.gridTemplateColumns = `repeat(${meta.cols}, 1fr)`;
+          const cfg = this.hardware?.status?.handoffInfo?.layouts?.find((l) => l.id === layoutId);
+          const slotAspect = (cfg?.slotW && cfg?.slotH) ? (cfg.slotW / cfg.slotH) : (meta.slotAspect || (484 / 339));
+          const recent = photos.slice(-meta.shots);
+          gridEl.innerHTML = '';
+          for (let i = 0; i < meta.shots; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'template-slot';
+            slot.style.aspectRatio = `${slotAspect.toFixed(2)} / 1`;
+            const photoItem = recent[i];
+            if (photoItem) {
+              const img = document.createElement('img');
+              img.src = photoItem.url;
+              img.alt = `Pose ${i + 1}`;
+              const slotLandscape = slotAspect >= 1;
+              const photoLandscape = photoItem.width ? (photoItem.width >= photoItem.height) : (slotAspect < 1);
+              const shouldRotateThumb = (ori === 'portrait' && slotLandscape && !photoLandscape)
+                                     || (ori === 'landscape' && !slotLandscape && photoLandscape)
+                                     || (ori === 'auto' && slotLandscape !== photoLandscape);
+              if (shouldRotateThumb) {
+                img.style.transform = `rotate(90deg) scale(${(slotAspect >= 1 ? slotAspect : 1 / slotAspect).toFixed(2)})`;
+                img.style.transformOrigin = 'center center';
+              }
+              slot.appendChild(img);
+            } else if (i === recent.length) {
+              slot.classList.add('active-next');
+              slot.textContent = '📷';
+            } else {
+              slot.textContent = String(i + 1).padStart(2, '0');
+            }
+            gridEl.appendChild(slot);
+          }
+        }
+      }
+
+      /** Compiles and downloads (or prints) the active photo strip / grid template with the captured photos. */
+      async downloadCompositeStrip() {
+        const photos = this.trayManager.photos;
+        if (photos.length === 0) {
+          this.showToast('Capture at least 1 photo first!');
+          return;
+        }
+        if (this.hardware?.status?.irfanView && document.getElementById('select-paper-size')?.value) {
+          await this.printPhoto(photos[photos.length - 1]);
+          return;
+        }
+        const layoutId = document.getElementById('select-booth-layout')?.value || '2x6_strip4';
+        if (layoutId === 'photocard') {
+          // K-pop photocard: standard 55 × 85 mm at 300 DPI, full-bleed edge-to-edge with no framing or footer
+          const canvas = document.createElement('canvas');
+          canvas.width = 650;
+          canvas.height = 1004;
+          const ctx = canvas.getContext('2d');
+          const p = photos[photos.length - 1];
+          const bm = await createImageBitmap(p.blob);
+          const ori = typeof document !== 'undefined' ? (document.getElementById('select-booth-orientation')?.value || 'auto') : 'auto';
+          const cardLandscape = canvas.width >= canvas.height;
+          const imgLandscape = bm.width >= bm.height;
+          const shouldRotate = (ori === 'landscape' && !cardLandscape)
+                            || (ori === 'portrait' && cardLandscape)
+                            || (ori === 'auto' && cardLandscape !== imgLandscape);
+
+          ctx.save();
+          if (shouldRotate) {
+            ctx.translate(canvas.width * 0.5, canvas.height * 0.5);
+            ctx.rotate(Math.PI / 2);
+            const s = Math.max(canvas.height / bm.width, canvas.width / bm.height);
+            const sw = canvas.height / s, sh = canvas.width / s;
+            ctx.drawImage(bm, (bm.width - sw) * 0.5, (bm.height - sh) * 0.5, sw, sh, -canvas.height * 0.5, -canvas.width * 0.5, canvas.height, canvas.width);
+          } else {
+            const s = Math.max(canvas.width / bm.width, canvas.height / bm.height);
+            const sw = canvas.width / s, sh = canvas.height / s;
+            ctx.drawImage(bm, (bm.width - sw) * 0.5, (bm.height - sh) * 0.5, sw, sh, 0, 0, canvas.width, canvas.height);
+          }
+          ctx.restore();
+          bm.close?.();
+
+          canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kpop-photocard-${Date.now()}.png`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            this.showToast('📸 K-pop photocard saved!');
+          }, 'image/png');
+          return;
+        }
+        const metaMap = {
+          '2x6_strip4':      { shots: 4, cols: 1, slotW: 484, slotH: 339 },
+          'mini_strip24x72': { shots: 4, cols: 1, slotW: 420, slotH: 294 },
+          'photocard':       { shots: 1, cols: 1, slotW: 648, slotH: 860 },
+          '4x6_grid2x2':     { shots: 4, cols: 2, slotW: 480, slotH: 640 },
+          '4x6_grid2x3':     { shots: 6, cols: 2, slotW: 460, slotH: 460 }
+        };
+        const meta = metaMap[layoutId] || metaMap['2x6_strip4'];
+        const rows = Math.ceil(meta.shots / meta.cols);
+        const pad = 32, gap = 18, footerH = 92;
+        const canvas = document.createElement('canvas');
+        canvas.width = pad * 2 + meta.cols * meta.slotW + (meta.cols - 1) * gap;
+        canvas.height = pad * 2 + rows * meta.slotH + (rows - 1) * gap + footerH;
+        const ctx = canvas.getContext('2d');
+        const bg = this.trayManager.paperColor || '#F6EFE6';
+        const isDark = bg === '#28363D';
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const selected = photos.slice(-meta.shots);
+        const bitmaps = await Promise.all(selected.map((p) => createImageBitmap(p.blob)));
+        const ori = typeof document !== 'undefined' ? (document.getElementById('select-booth-orientation')?.value || 'auto') : 'auto';
+        for (let i = 0; i < meta.shots; i++) {
+          const r = Math.floor(i / meta.cols);
+          const c = i % meta.cols;
+          const x = pad + c * (meta.slotW + gap);
+          const y = pad + r * (meta.slotH + gap);
+          const bm = bitmaps[i % bitmaps.length];
+          if (bm) {
+            const slotLandscape = meta.slotW >= meta.slotH;
+            const imgLandscape = bm.width >= bm.height;
+            const shouldRotate = (ori === 'portrait' && slotLandscape)
+                              || (ori === 'landscape' && !slotLandscape)
+                              || (ori === 'auto' && slotLandscape !== imgLandscape);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, meta.slotW, meta.slotH);
+            ctx.clip();
+
+            if (shouldRotate) {
+              ctx.translate(x + meta.slotW * 0.5, y + meta.slotH * 0.5);
+              ctx.rotate(Math.PI / 2);
+              const s = Math.max(meta.slotH / bm.width, meta.slotW / bm.height);
+              const sw = meta.slotH / s, sh = meta.slotW / s;
+              ctx.drawImage(bm, (bm.width - sw) * 0.5, (bm.height - sh) * 0.5, sw, sh, -meta.slotH * 0.5, -meta.slotW * 0.5, meta.slotH, meta.slotW);
+            } else {
+              const s = Math.max(meta.slotW / bm.width, meta.slotH / bm.height);
+              const sw = meta.slotW / s, sh = meta.slotH / s;
+              ctx.drawImage(bm, (bm.width - sw) * 0.5, (bm.height - sh) * 0.5, sw, sh, x, y, meta.slotW, meta.slotH);
+            }
+            ctx.restore();
+          }
+        }
+        bitmaps.forEach((b) => b.close?.());
+
+        const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        ctx.fillStyle = '#D94E3B';
+        ctx.font = 'bold 42px Caveat, cursive';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Picnic Prints', canvas.width * 0.5, canvas.height - footerH * 0.58);
+        ctx.fillStyle = isDark ? 'rgba(246,239,230,0.65)' : 'rgba(58,37,27,0.6)';
+        ctx.font = '600 14px Figtree, sans-serif';
+        ctx.fillText(`A LITTLE MOMENT, FOREVER • ${dateStr.toUpperCase()}`, canvas.width * 0.5, canvas.height - footerH * 0.24);
+
+        const tmpl = typeof document !== 'undefined' ? (document.getElementById('select-booth-template')?.value || 'auto') : 'auto';
+        let tplFile = null;
+        if (tmpl && tmpl !== 'none' && tmpl !== 'auto') {
+          tplFile = tmpl;
+        } else if (tmpl === 'auto') {
+          const lay = this.hardware?.status?.handoffInfo?.layouts?.find((l) => l.id === layoutId);
+          tplFile = lay?.templates?.find((t) => t && t !== 'none' && t !== 'auto') || null;
+        }
+        if (tplFile) {
+          try {
+            const tImg = new Image();
+            tImg.crossOrigin = 'anonymous';
+            await new Promise((res, rej) => {
+              tImg.onload = res;
+              tImg.onerror = rej;
+              tImg.src = `/api/template/image?layout=${encodeURIComponent(layoutId)}&name=${encodeURIComponent(tplFile)}`;
+            });
+            ctx.drawImage(tImg, 0, 0, canvas.width, canvas.height);
+          } catch (_) {}
+        }
+
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `picnic-${layoutId}-${Date.now()}.png`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+          this.showToast('📸 Composite photo strip saved!');
+        }, 'image/png');
       }
 
       onPointerDown(e) {
@@ -996,11 +2265,16 @@
 
       startCountdown() {
         if (this.countdownActive) return;
+        const dur = parseInt(document.getElementById('select-countdown-timer')?.value ?? '3', 10);
+        if (dur <= 0) {
+          this.completePhotoCapture();
+          return;
+        }
         this.countdownActive = true;
         const overlay = document.getElementById('countdown-overlay');
         const numEl = document.getElementById('countdown-number');
         overlay.classList.remove('hidden');
-        let remaining = 3; numEl.textContent = String(remaining);
+        let remaining = dur; numEl.textContent = String(remaining);
         this.countdownTimer = setInterval(() => {
           remaining -= 1;
           if (remaining > 0) {
@@ -1041,24 +2315,78 @@
 
         const hi = st.handoffInfo;
         const syncTemplates = () => {
+          const hi = this.hardware?.status?.handoffInfo;
           const lay = hi?.layouts?.find((l) => l.id === layoutSel.value);
-          const prev = localStorage.getItem(`booth.tmpl.${layoutSel.value}`) || 'auto';
+          const prev = localStorage.getItem(`booth.tmpl.${layoutSel.value}`) || tmplSel.value || 'auto';
           tmplSel.innerHTML = '';
           tmplSel.add(new Option('Auto template', 'auto'));
           for (const t of (lay?.templates || ['none'])) tmplSel.add(new Option(t === 'none' ? 'Plain white' : t, t));
           if ([...tmplSel.options].some((o) => o.value === prev)) tmplSel.value = prev;
         };
+        const refreshTemplatesFromDisk = async () => {
+          const fresh = await this.hardware.refresh();
+          if (fresh?.handoffInfo) {
+            syncTemplates();
+            this.updateStudioUI();
+          }
+        };
+        tmplSel.addEventListener('focus', refreshTemplatesFromDisk);
+        tmplSel.addEventListener('pointerdown', refreshTemplatesFromDisk);
+        setInterval(refreshTemplatesFromDisk, 8000);
         if (hi?.layouts?.length) {
           layoutSel.innerHTML = '';
-          for (const l of hi.layouts) layoutSel.add(new Option(l.label || l.id, l.id));
+          const btnGroup = document.getElementById('layout-buttons-group');
+          if (btnGroup) btnGroup.innerHTML = '';
+          const labelMap = {
+            '2x6_strip4': { icon: '🎞️', text: 'Classic strip' },
+            '4x6_grid2x2': { icon: '📇', text: 'Postcard' },
+            'photocard': { icon: '🃏', text: 'Photocard' },
+            'mini_strip24x72': { icon: '✂️', text: 'Mini strip' },
+            '4x6_grid2x3': { icon: '▦', text: '2×3 Grid (6 poses)', span: 2 }
+          };
+          hi.layouts.forEach((l, idx) => {
+            layoutSel.add(new Option(l.label || l.id, l.id));
+            if (btnGroup) {
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.className = 'seg-btn';
+              b.dataset.layoutQuick = l.id;
+              const info = labelMap[l.id];
+              if (info) {
+                b.innerHTML = `<span>${info.icon}</span> ${info.text}`;
+                if (info.span) b.style.gridColumn = `span ${info.span}`;
+              } else {
+                b.textContent = l.label || l.id;
+                if (idx === hi.layouts.length - 1 && hi.layouts.length % 2 === 1) {
+                  b.style.gridColumn = 'span 2';
+                }
+              }
+              btnGroup.appendChild(b);
+            }
+          });
+          this.bindLayoutButtons?.();
           layoutSel.value = localStorage.getItem('booth.layout') || hi.defaultLayout || hi.layouts[0].id;
         }
+        const is1x4Format = (id) => id === '2x6_strip4' || id === 'mini_strip24x72';
         oriSel.value = localStorage.getItem('booth.ori') || hi?.defaultOrientation || 'auto';
-        copiesInp.value = localStorage.getItem('booth.copies') || String(hi?.defaultCopies || 1);
+        if (is1x4Format(layoutSel.value)) {
+          copiesInp.value = '2';
+          localStorage.setItem('booth.copies', '2');
+        } else {
+          copiesInp.value = localStorage.getItem('booth.copies') || String(hi?.defaultCopies || 1);
+        }
         syncTemplates();
-        layoutSel.addEventListener('change', () => { localStorage.setItem('booth.layout', layoutSel.value); syncTemplates(); this.handleResize(); });
+        layoutSel.addEventListener('change', () => {
+          localStorage.setItem('booth.layout', layoutSel.value);
+          if (is1x4Format(layoutSel.value)) {
+            copiesInp.value = '2';
+            localStorage.setItem('booth.copies', '2');
+          }
+          syncTemplates();
+          this.handleResize();
+        });
         oriSel.addEventListener('change', () => { localStorage.setItem('booth.ori', oriSel.value); this.handleResize(); });
-        tmplSel.addEventListener('change', () => localStorage.setItem(`booth.tmpl.${layoutSel.value}`, tmplSel.value));
+        tmplSel.addEventListener('change', () => { localStorage.setItem(`booth.tmpl.${layoutSel.value}`, tmplSel.value); this.updateStudioUI(); });
         copiesInp.addEventListener('change', () => localStorage.setItem('booth.copies', copiesInp.value));
         this.handleResize();
 
@@ -1080,10 +2408,10 @@
       handoffShot() {
         const layout = document.getElementById('select-booth-layout')?.value || '2x6_strip4';
         const rawOri = document.getElementById('select-booth-orientation')?.value || 'auto';
-        const ori = rawOri === 'landscape' ? 'landscape' : 'portrait';
+        const w = this.stageCanvas.width, h = this.stageCanvas.height;
+        const ori = rawOri === 'auto' ? (w >= h ? 'landscape' : 'portrait') : rawOri;
         const tmpl = document.getElementById('select-booth-template')?.value || 'auto';
         const copies = Math.max(1, parseInt(document.getElementById('input-booth-copies')?.value || '1', 10) || 1);
-        const w = this.stageCanvas.width, h = this.stageCanvas.height;
         const qs = new URLSearchParams({ layout, orientation: ori, template: tmpl, copies: String(copies), w: String(w), h: String(h) });
         const layInfo = this.hardware.status.handoffInfo?.layouts?.find((l) => l.id === layout);
         const needed = layInfo?.shots || 4;
@@ -1190,9 +2518,10 @@
         document.getElementById('tray-warning').classList.toggle('hidden', !this.trayManager.isFull());
         const gifBtn = document.getElementById('btn-make-gif');
         if (gifBtn) gifBtn.disabled = count < 2;
+        this.updateStudioUI?.();
         list.innerHTML = '';
         if (this.trayManager.photos.length === 0) {
-          list.innerHTML = '<p class="empty-tray-msg">No photos yet. Fog the glass and press <strong>Photo</strong>!</p>';
+          list.innerHTML = '<p class="empty-tray-msg">No photos yet. Fog the glass and press <strong>Start photo strip</strong>!</p>';
           return;
         }
         for (const photo of [...this.trayManager.photos].reverse()) {
@@ -1235,6 +2564,10 @@
           if (this.fogKeyHeld) this.triggerFogPulse();
           this.processTracking(nowMs, dtSec);
           this.fogEngine.step(dtSec);
+          if (nowMs - (this.lastFogUiMs || 0) > 450) {
+            this.lastFogUiMs = nowMs;
+            this.updateFogPercentUI?.();
+          }
         }
         this.renderComposite(dtSec, w, h);
         requestAnimationFrame((t) => this.loop(t));
@@ -1246,7 +2579,7 @@
         if (nowMs - this.lastHandSeen > 280) {
           this.pondHand = null; this.lastHandStrokePos = null; this.lastHandMode = null; this.handCursor = null;
           this.gestureGate.update('none', nowMs);
-          document.getElementById('gesture-status').textContent = 'Show an open palm to erase · point to guide · beak to feed';
+          document.getElementById('gesture-status').textContent = '👌 Pinch thumb & index then extend index finger to clear fog · open palm to wipe';
         }
 
         const freshDetection = this.tracker.detect(this.videoEl, nowMs);
@@ -1513,7 +2846,7 @@
           this.sceneManager.renderDemoBackground(sCtx);
         }
 
-        const pointerTarget = this.activeTool === 'play' && this.pointerPos ? { x: this.pointerPos.x / w, y: this.pointerPos.y / h, pose: 'point' } : null;
+        const pointerTarget = this.pointerPos ? { x: this.pointerPos.x / w, y: this.pointerPos.y / h, pose: 'point' } : null;
         const playTarget = this.pondHand || pointerTarget;
         this.sceneManager.renderScene(sCtx, this.countdownActive ? 0 : dtSec, playTarget);
 

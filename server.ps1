@@ -26,6 +26,8 @@ $MimeTypes = @{
   ".json" = "application/json; charset=utf-8"
   ".wasm" = "application/wasm"
   ".task" = "application/octet-stream"
+  ".glb"  = "model/gltf-binary"
+  ".gltf" = "model/gltf+json"
   ".png"  = "image/png"
   ".jpg"  = "image/jpeg"
   ".svg"  = "image/svg+xml"
@@ -184,6 +186,14 @@ function Get-HandoffInfo {
       if ($tplDir -and (Test-Path $tplDir -PathType Container)) {
         $pngs = Get-ChildItem -Path $tplDir -Filter *.png -File -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }
         if ($pngs) { $tpls += $pngs }
+      }
+      if ($tplRoot -and (Test-Path $tplRoot -PathType Container)) {
+        $rootPngs = Get-ChildItem -Path $tplRoot -Filter *.png -File -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }
+        if ($rootPngs) {
+          foreach ($rp in $rootPngs) {
+            if ($tpls -notcontains $rp) { $tpls += $rp }
+          }
+        }
       }
       $layouts += [ordered]@{
         id        = $id
@@ -385,6 +395,35 @@ function Handle-Api($Request, $Response, [string]$UrlPath) {
         if (-not $isPost) { Send-Json $Response @{ ok = $false; error = "POST required" } 405; return }
         $body = Read-Body $Request
         Send-Json $Response (Invoke-IrfanPrint $body $Request.QueryString["size"])
+      }
+      "/api/template/image" {
+        $rawName = $Request.QueryString["name"]
+        $layout = $Request.QueryString["layout"]
+        if (-not $rawName -or $rawName -eq "none" -or $rawName -eq "auto") {
+          Send-Json $Response @{ ok = $false; error = "Missing template name" } 404
+          return
+        }
+        $name = [System.IO.Path]::GetFileName($rawName)
+        $h = $Config.handoff
+        $folder = Get-HandoffFolder
+        $tplRoot = if ($h -and $h.templatesFolder) { Resolve-RootPath $h.templatesFolder } elseif ($folder) { Join-Path (Split-Path $folder -Parent) "templates" } else { $null }
+        $target = $null
+        if ($tplRoot -and $layout -and (Test-Path (Join-Path $tplRoot $layout) -PathType Container)) {
+          $sub = Join-Path (Join-Path $tplRoot $layout) $name
+          if (Test-Path $sub -PathType Leaf) { $target = $sub }
+        }
+        if (-not $target -and $tplRoot -and (Test-Path (Join-Path $tplRoot $name) -PathType Leaf)) {
+          $target = Join-Path $tplRoot $name
+        }
+        if (-not $target -and (Test-Path (Join-Path $Root "templates\$name") -PathType Leaf)) {
+          $target = Join-Path $Root "templates\$name"
+        }
+        if ($target -and (Test-Path $target -PathType Leaf)) {
+          $bytes = [System.IO.File]::ReadAllBytes($target)
+          Send-Bytes $Response $bytes "image/png"
+        } else {
+          Send-Json $Response @{ ok = $false; error = "Template not found" } 404
+        }
       }
       default { Send-Json $Response @{ ok = $false; error = "Unknown endpoint" } 404 }
     }

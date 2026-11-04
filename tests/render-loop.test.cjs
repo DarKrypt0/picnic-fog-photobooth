@@ -49,3 +49,31 @@ for (const cameraActive of [false, true]) {
     if (cameraActive) assert.ok(transforms.some(args => args[0] === 'scale' && args[1] === -1), 'Camera remains mirrored');
   });
 }
+
+test('Orientation modes calculate correct slot aspect ratios and keep live feed straight', () => {
+  const { app, sandbox } = renderer(true);
+  // Live feed remains straight to the user
+  assert.equal(app.getOrientationAngle(), 0);
+
+  // Mock orientation selector
+  const mockElements = {
+    'select-booth-orientation': { value: 'portrait' },
+    'select-booth-layout': { value: 'photocard' }
+  };
+  sandbox.document = {
+    getElementById(id) { return mockElements[id] || null; }
+  };
+
+  assert.equal(app.getOrientationAngle(), 0, 'Live feed must remain straight to the user');
+  assert.equal(app.getSlotAspect(), 55 / 85);
+
+  mockElements['select-booth-orientation'].value = 'landscape';
+  assert.equal(app.getSlotAspect(), 85 / 55);
+
+  mockElements['select-booth-layout'].value = '2x6_strip4';
+  mockElements['select-booth-orientation'].value = 'portrait';
+  assert.equal(app.getSlotAspect(), 339 / 484);
+
+  mockElements['select-booth-orientation'].value = 'landscape';
+  assert.equal(app.getSlotAspect(), 484 / 339);
+});

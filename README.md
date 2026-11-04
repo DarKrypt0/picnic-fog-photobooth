@@ -21,3 +21,10 @@ Because ES modules and webcam permissions require `localhost` or `HTTPS`, do not
 Double-click `start.bat` or run:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\serve.ps1
+```
+
+## 3D Model Credits & Attribution
+- [Butterfly](https://poly.pizza/m/2ZwYwkTVnfG) by [Poly by Google](https://poly.pizza/u/Poly%20by%20Google) [[CC-BY](https://creativecommons.org/licenses/by/3.0/)] via Poly Pizza
+- [butterfly](https://poly.pizza/m/0Wt0Mc31Qsj) by [Hugo Gibson](https://poly.pizza/u/Hugo%20Gibson) [[CC-BY](https://creativecommons.org/licenses/by/3.0/)] via Poly Pizza
+- [Butterfly](https://poly.pizza/m/fv6J8XW4hvC) by [sirkitree](https://poly.pizza/u/sirkitree) [[CC-BY](https://creativecommons.org/licenses/by/3.0/)] via Poly Pizza
+

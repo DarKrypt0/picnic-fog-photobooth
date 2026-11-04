@@ -28,14 +28,36 @@ export function computeCoverTransform(videoWidth, videoHeight, stageWidth, stage
  * Maps normalized MediaPipe landmark [0..1] into mirrored stage pixel coordinates,
  * accounting for object-fit: cover cropping.
  */
-export function mapNormalizedToStage(normX, normY, videoWidth, videoHeight, stageWidth, stageHeight, mirror = true) {
-  const { scale, offsetX, offsetY } = computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight);
-  const effectiveNormX = mirror ? (1 - normX) : normX;
-  const x = effectiveNormX * videoWidth * scale + offsetX;
-  const y = normY * videoHeight * scale + offsetY;
+export function mapNormalizedToStage(normX, normY, videoWidth, videoHeight, stageWidth, stageHeight, mirror = true, angleRad = 0) {
+  if (!angleRad) {
+    const { scale, offsetX, offsetY } = computeCoverTransform(videoWidth, videoHeight, stageWidth, stageHeight);
+    const effectiveNormX = mirror ? (1 - normX) : normX;
+    const x = effectiveNormX * videoWidth * scale + offsetX;
+    const y = normY * videoHeight * scale + offsetY;
+    return {
+      x: Math.max(0, Math.min(stageWidth, x)),
+      y: Math.max(0, Math.min(stageHeight, y))
+    };
+  }
+  const isRotated = angleRad !== 0;
+  const effW = isRotated ? videoHeight : videoWidth;
+  const effH = isRotated ? videoWidth : videoHeight;
+  const { scale } = computeCoverTransform(effW, effH, stageWidth, stageHeight);
+
+  const px = (normX - 0.5) * videoWidth * scale;
+  const py = (normY - 0.5) * videoHeight * scale;
+
+  const cos = Math.cos(angleRad);
+  const sin = Math.sin(angleRad);
+  const rx = px * cos - py * sin;
+  const ry = px * sin + py * cos;
+
+  const mx = mirror ? -rx : rx;
+  const my = ry;
+
   return {
-    x: Math.max(0, Math.min(stageWidth, x)),
-    y: Math.max(0, Math.min(stageHeight, y))
+    x: Math.max(0, Math.min(stageWidth, stageWidth * 0.5 + mx)),
+    y: Math.max(0, Math.min(stageHeight, stageHeight * 0.5 + my))
   };
 }
 
