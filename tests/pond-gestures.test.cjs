@@ -129,35 +129,51 @@ test('live page erases only after palm dwell and feeds once per beak gesture',as
     sceneManager:{currentScene:'aquarium',paused:false,pond:{dropFood(x,y){food.push([x,y]);}}},showToast(){},applyToolSegment(){throw new Error('Unexpected write');}
   });
   for(let t=0;t<=300;t+=50)app.processTracking(t,.05);assert.equal(cleared.length,0);
-  pose='palm';for(let t=350;t<=600;t+=50)app.processTracking(t,.05);assert.ok(cleared.length>0);assert.ok(cleared[0][4]>=.05&&cleared[0][4]<=.16);
+  // With clearing locked by default, open palm does NOT clear fog (protecting poses)
+  pose='palm';for(let t=350;t<=600;t+=50)app.processTracking(t,.05);assert.equal(cleared.length,0);
   pose='beak';for(let t=650;t<=1400;t+=50)app.processTracking(t,.05);assert.equal(food.length,1);
   pose=null;for(let t=1450;t<=1850;t+=50)app.processTracking(t,.05);assert.equal(app.pondHand,null);assert.equal(app.lastHandStrokePos,null);
   pose='beak';for(let t=1900;t<=2250;t+=50)app.processTracking(t,.05);assert.equal(food.length,2);
 
-  // Pinch thumb+index -> release index finger -> clears fog; pinch back -> stops clearing fog
+  // Pinch thumb+index -> unlocks hand clearing for both finger and palm!
   const writes=[];app.applyToolSegment=(...a)=>writes.push(a);
   const pinchHand=()=>{const h=hand('point');h[8]={x:.39,y:.52,z:0};h[4]={x:.40,y:.53,z:0};return h;};
   app.tracker.detect=()=>({handLandmarks:pinchHand()});
   for(let t=2300;t<=2400;t+=50)app.processTracking(t,.05);
-  assert.equal(app.pinchWriteLatched,true);assert.equal(writes.length,0); // doesn't smudge while still pinched
-  app.tracker.detect=()=>({handLandmarks:hand('point')});
-  for(let t=2450;t<=2600;t+=50)app.processTracking(t,.05);
-  assert.ok(writes.length>0); // clears fog once index finger extends
+  assert.equal(app.pinchWriteLatched,true);assert.equal(writes.length,0);assert.equal(cleared.length,0); // doesn't smudge while pinched
+
+  // Once unlocked, open palm wipes broad areas
+  pose='palm';app.tracker.detect=()=>({handLandmarks:hand('palm')});
+  for(let t=2450;t<=2700;t+=50)app.processTracking(t,.05);
+  assert.ok(cleared.length>0);assert.ok(cleared[0][4]>=.05&&cleared[0][4]<=.16);
+  const countAfterPalm=cleared.length;
+
+  // And index finger clears precision path
+  pose='point';app.tracker.detect=()=>({handLandmarks:hand('point')});
+  for(let t=2750;t<=2950;t+=50)app.processTracking(t,.05);
+  assert.ok(writes.length>0);
   const countAfterWrite=writes.length;
 
   // Moving finger outside the 10% edge boundary box (e.g. y = 0.95) stops detection & clearing completely
   const edgeHand=()=>hand('point').map(q=>({...q,y:.95}));
   app.tracker.detect=()=>({handLandmarks:edgeHand()});
-  for(let t=2620;t<=2640;t+=10)app.processTracking(t,.05);
+  for(let t=2960;t<=2980;t+=10)app.processTracking(t,.05);
   assert.equal(writes.length,countAfterWrite);
   assert.equal(app.handOutsideZone,true);
 
+  // Pinching again locks clearing back OFF (locks both palm and finger)
   app.tracker.detect=()=>({handLandmarks:pinchHand()});
-  for(let t=2650;t<=2750;t+=50)app.processTracking(t,.05);
+  for(let t=3000;t<=3100;t+=50)app.processTracking(t,.05);
   assert.equal(app.pinchWriteLatched,false);
+
+  // Both finger and palm are locked now; neither clears fog
   app.tracker.detect=()=>({handLandmarks:hand('point')});
-  for(let t=2800;t<=2950;t+=50)app.processTracking(t,.05);
-  assert.equal(writes.length,countAfterWrite); // stays stopped after pinching back
+  for(let t=3150;t<=3300;t+=50)app.processTracking(t,.05);
+  assert.equal(writes.length,countAfterWrite);
+
+  app.tracker.detect=()=>({handLandmarks:hand('palm')});
+  for(let t=3350;t<=3550;t+=50)app.processTracking(t,.05);
+  assert.equal(cleared.length,countAfterPalm);
 });
 
 test('fish remain drawable when Three.js or WebGL is unavailable',async()=>{

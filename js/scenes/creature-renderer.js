@@ -93,6 +93,10 @@ function decodeBase64ToArrayBuffer(b64) {
 }
 
 export class CreatureRenderer {
+  get isReady() {
+    return Boolean(this.isThreeReady || (this.creatures && this.creatures.length > 0));
+  }
+
   constructor(THREE, width, height) {
     this.THREE = THREE;
     this.width = width || 1280;
@@ -838,6 +842,10 @@ export class CreatureRenderer {
   render(ctx, dt, playTarget = null) {
     this.update(dt, playTarget);
 
+    if (this.isThreeReady && this.normalizedTemplates.size === 0 && !this.loadingAttempted) {
+      this.loadAssets();
+    }
+
     let rendered3D = false;
     if (this.isThreeReady && this.renderer && this.scene && this.camera) {
       const has3D = this.creatures.some((c) => c.threeGroup !== null);
@@ -864,13 +872,76 @@ export class CreatureRenderer {
       ctx.translate(c.x, c.y);
       const angle = Math.atan2(c.vy, c.vx);
       ctx.rotate(angle);
-      const s = c.scale * 0.25;
-      const spread = s * 0.65 * Math.max(0.2, Math.abs(Math.cos(c.wingPhase)));
-      ctx.fillStyle = c.cfg.color;
-      ctx.beginPath();
-      ctx.ellipse(0, -spread * 0.6, s * 0.8, spread * 0.8, 0.2, 0, Math.PI * 2);
-      ctx.ellipse(0, spread * 0.6, s * 0.8, spread * 0.8, -0.2, 0, Math.PI * 2);
-      ctx.fill();
+      const s = c.scale * 0.45;
+      const flap = Math.cos(c.wingPhase);
+      const wingSpan = Math.max(0.18, Math.abs(flap));
+      const color = c.cfg.color || '#F2994A';
+      const secColor = c.cfg.secondaryColor || '#2D3748';
+
+      if (typeof ctx.bezierCurveTo === 'function') {
+        // Symmetrical forewings and hindwings with natural butterfly wing silhouettes
+        for (const side of [-1, 1]) {
+          ctx.save();
+          ctx.scale(1, side * wingSpan);
+
+          // Forewing
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(s * 0.4, -s * 0.9, s * 0.9, -s * 0.8, s * 0.6, -s * 0.2);
+          ctx.bezierCurveTo(s * 0.4, -s * 0.05, s * 0.2, 0, 0, 0);
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = secColor;
+          ctx.stroke();
+
+          // Hindwing
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(s * 0.2, -s * 0.1, s * 0.45, s * 0.4, s * 0.1, s * 0.55);
+          ctx.bezierCurveTo(-s * 0.1, s * 0.45, -s * 0.05, s * 0.2, 0, 0);
+          ctx.fillStyle = secColor;
+          ctx.fill();
+          ctx.lineWidth = 1.0;
+          ctx.strokeStyle = color;
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        // Slender body & head
+        ctx.fillStyle = '#1A1412';
+        ctx.beginPath();
+        if (typeof ctx.ellipse === 'function') {
+          ctx.ellipse(0, 0, s * 0.35, s * 0.09, 0, 0, Math.PI * 2);
+        } else {
+          ctx.arc(0, 0, s * 0.15, 0, Math.PI * 2);
+        }
+        ctx.fill();
+
+        // Antennae
+        if (typeof ctx.quadraticCurveTo === 'function') {
+          ctx.strokeStyle = '#1A1412';
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.moveTo(s * 0.3, 0);
+          ctx.quadraticCurveTo(s * 0.5, -s * 0.18, s * 0.6, -s * 0.25);
+          ctx.moveTo(s * 0.3, 0);
+          ctx.quadraticCurveTo(s * 0.5, s * 0.18, s * 0.6, s * 0.25);
+          ctx.stroke();
+        }
+      } else {
+        // Fallback for minimal canvas mock contexts
+        const spread = s * 0.65 * wingSpan;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        if (typeof ctx.ellipse === 'function') {
+          ctx.ellipse(0, -spread * 0.6, s * 0.8, spread * 0.8, 0.2, 0, Math.PI * 2);
+          ctx.ellipse(0, spread * 0.6, s * 0.8, spread * 0.8, -0.2, 0, Math.PI * 2);
+        }
+        ctx.fill();
+      }
+
       ctx.restore();
     }
   }

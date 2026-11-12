@@ -39,8 +39,11 @@ export class SceneManager {
   }
 
   setScene(sceneId) {
-    this.currentScene = sceneId;
-    this.creatureRenderer?.onSceneChanged(sceneId);
+    let sc = sceneId;
+    if (sc === 'forest') sc = 'shade';
+    if (sc === 'sunny') sc = 'meadow';
+    this.currentScene = sc;
+    this.creatureRenderer?.onSceneChanged(sc);
   }
 
   initEntities() {
@@ -115,10 +118,10 @@ export class SceneManager {
       grad.addColorStop(0, '#F5C37E');
       grad.addColorStop(0.58, '#F9DFB0');
       grad.addColorStop(1, '#A3BE7B');
-    } else if (this.currentScene === 'shade') {
-      grad.addColorStop(0, '#6CA98F');
-      grad.addColorStop(0.6, '#A9D6AD');
-      grad.addColorStop(1, '#5D9361');
+    } else if (this.currentScene === 'shade' || this.currentScene === 'forest') {
+      grad.addColorStop(0, '#4A7C59');
+      grad.addColorStop(0.5, '#68A678');
+      grad.addColorStop(1, '#2D5038');
     } else {
       grad.addColorStop(0, '#88D4CD');
       grad.addColorStop(0.65, '#CDEAC0');
@@ -140,7 +143,7 @@ export class SceneManager {
         }
       : null;
 
-    if (this.currentScene === 'meadow') {
+    if (this.currentScene === 'meadow' || this.currentScene === 'sunny') {
       const sun = ctx.createRadialGradient(w * 0.84, h * 0.14, 8, w * 0.84, h * 0.14, Math.max(w, h) * 0.58);
       sun.addColorStop(0, 'rgba(255, 224, 130, 0.24)');
       sun.addColorStop(0.5, 'rgba(242, 181, 68, 0.09)');
@@ -326,7 +329,7 @@ export class SceneManager {
         ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
         ctx.fill();
       }
-    } else if (this.currentScene === 'shade') {
+    } else if (this.currentScene === 'shade' || this.currentScene === 'forest') {
       ctx.save();
       const beamGrad = ctx.createLinearGradient(0, 0, w * 0.7, h);
       beamGrad.addColorStop(0, 'rgba(215, 245, 175, 0.18)');

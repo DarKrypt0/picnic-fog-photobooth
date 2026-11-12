@@ -29,27 +29,27 @@ export class FogEngine {
     }
   }
 
-  fillInitialIntroFog() {
-    this.density.fill(0.86);
-    this.carveIntroTitle();
+  fillInitialIntroFog(text = 'ClickKit') {
+    this.density.fill(0.85);
+    this.carveIntroTitle(text);
   }
 
-  carveIntroTitle() {
+  carveIntroTitle(text = 'ClickKit') {
     const temp = document.createElement('canvas');
     temp.width = this.gridWidth;
     temp.height = this.gridHeight;
     const tctx = temp.getContext('2d');
     tctx.fillStyle = '#000';
-    tctx.font = `bold ${Math.round(this.gridHeight * 0.22)}px Caveat, cursive`;
+    tctx.font = `bold ${Math.round(this.gridHeight * 0.28)}px Caveat, cursive`;
     tctx.textAlign = 'center';
     tctx.textBaseline = 'middle';
-    tctx.fillText('Picnic Glass', this.gridWidth * 0.5, this.gridHeight * 0.25);
+    tctx.fillText(text, this.gridWidth * 0.5, this.gridHeight * 0.25);
 
     const data = tctx.getImageData(0, 0, this.gridWidth, this.gridHeight).data;
     for (let i = 0; i < this.density.length; i++) {
       const alpha = data[i * 4 + 3] / 255;
-      if (alpha > 0.1) {
-        this.density[i] = Math.max(0.05, this.density[i] * (1 - alpha * 0.92));
+      if (alpha > 0.08) {
+        this.density[i] = Math.max(0.02, this.density[i] * (1 - alpha * 0.96));
       }
     }
   }

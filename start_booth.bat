@@ -6,15 +6,20 @@ set "PRINT_DIR=C:\Users\hh\Downloads\Photobooth"
 set "FOG_DIR=C:\Users\hh\.gemini\antigravity\scratch\picnic-fog-photobooth"
 
 echo ========================================================
-echo          STARTING PICNIC FOG PHOTOBOOTH SUITE
+echo          STARTING CLICKKIT FOG PHOTOBOOTH SUITE
 echo ========================================================
 
 :: 1. Start the Fog Photobooth + QR GIF Server (server.ps1) if port 8080 is not listening
 netstat -ano | findstr /R /C:":8080 .*LISTENING" >NUL 2>&1
 if errorlevel 1 (
     echo [1/3] Starting Fog Photobooth ^& QR Server on http://127.0.0.1:8080 ...
-    start "Picnic Fog Server" /min powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%FOG_DIR%'; .\server.ps1"
-    timeout /t 2 /nobreak >NUL
+    start "ClickKit Fog Server" /min powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%FOG_DIR%'; .\server.ps1"
+    echo Waiting for PowerShell server to fully initialize on port 8080 ...
+    :WAIT_SERVER
+    timeout /t 1 /nobreak >NUL
+    netstat -ano | findstr /R /C:":8080 .*LISTENING" >NUL 2>&1
+    if errorlevel 1 goto WAIT_SERVER
+    echo PowerShell server is ready on http://127.0.0.1:8080!
 ) else (
     echo [1/3] Fog Photobooth Server is already running on port 8080.
 )
